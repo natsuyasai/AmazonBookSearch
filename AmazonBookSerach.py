@@ -26,34 +26,44 @@ def hoge() -> int:
 #************** import ***************
 import requests # webページ取得用
 import lxml     # webページ取得データ取得
-import pandas   # CSV読み書き
-from enum import Enum
+import csv      # CSV読み書き
 #*************************************
 
 #************** Const Define ***************
 READ_FILE_NAME = "SearchList.csv"         # 読込みファイル名
-COL_CAPT_NAME=["著者名","取得開始期間"]      # 読込みファイルの列名
-AUTHOR_NAME=0                             # 著者名インデックス 
-START_DATE=1                              # 期間インデックス
+AMAZON_SEARCH_URL = "https://www.google.co.jp/search?&q="   # アマゾン検索用URL
+
 
 # ログ出力
 def debug_log(print_data):
     print(print_data)
 
 # CSV読み込み
-# 著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する
-def read_csv(filename: str):
+def read_csv(filename: str, is_read_header : bool) -> dict:
+    debug_log("read_csv")
     # csv読込み
-    csv_data = pandas.read_csv(
-        filename,           # ファイル名
-        encoding="UTF-8",   # エンコード
-        header=0,           # ヘッダ行
-        names=[             # ヘッダキャプション名
-            COL_CAPT_NAME[AUTHOR_NAME],COL_CAPT_NAME[START_DATE]
-            ]
-        )
-    debug_log(csv_data[COL_CAPT_NAME[AUTHOR_NAME]])
-    debug_log(csv_data[COL_CAPT_NAME[START_DATE]])
+    with open(filename, encoding="UTF-8") as csvfile:
+        reader = csv.reader(csvfile)
+        if is_read_header is False:
+            next(reader)   #  ヘッダ読み飛ばし
+    return reader
+
+# 検索データ情報リストの生成
+# 著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する
+def create_serach_info_list(filename) -> dict:
+    debug_log("create_serach_info_list")
+    serach_list_dict = {}
+    # csv読込み
+    with open(filename, encoding="UTF-8") as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)   #  ヘッダ読み飛ばし
+        # データ生成
+        for row in reader:
+            # dictionaryに著者名をキーとしてデータを保持
+            serach_list_dict[row[0]] = row[1]
+    return serach_list_dict
+    
+
 
 
 # CVS書き込み
@@ -62,6 +72,14 @@ def read_csv(filename: str):
 
 # URL生成
 # 著者名から検索用URLを生成する
+def create_url(name_list: dict) -> list:
+    debug_log("create_url")
+    url_list = []
+    # 全key名でURLを生成し，listに保持
+    for search_name in list(name_list.keys):
+        debug_log(search_name)
+        url_list.append(AMAZON_SEARCH_URL+search_name)
+    return url_list
 
 
 # 検索結果取得
@@ -88,9 +106,17 @@ def read_csv(filename: str):
 
 # エントリポイント
 def main():
-    debug_log("エントリポイント\n")
-    # csvファイル読込み
-    read_csv(READ_FILE_NAME)
+    debug_log("Start\n")
+    # 検索データ取得
+    search_infos = create_serach_info_list(READ_FILE_NAME)
+    print(search_infos.keys())
+    """
+    url_list = create_url(search_dict)
+    for name in url_list:
+        print(name)
+        #rtn = requests.get(name)
+        #print(rtn.text)
+        """
     
 
 if __name__ == "__main__":
