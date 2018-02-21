@@ -8,7 +8,6 @@
 Webページを取得する：requests
 Webページからデータを抜き出す：lxml
 Webページの自動操作：selenium
-ファイル読込み/書込み：pandas
 
 戻り値指定
 def hoge() -> int:
@@ -27,11 +26,13 @@ def hoge() -> int:
 import requests # webページ取得用
 import lxml     # webページ取得データ取得
 import csv      # CSV読み書き
+import urllib   # urlエンコード変換
 #*************************************
 
 #************** Const Define ***************
 READ_FILE_NAME = "SearchList.csv"         # 読込みファイル名
-AMAZON_SEARCH_URL = "https://www.google.co.jp/search?&q="   # アマゾン検索用URL
+AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
+# https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
 
 # ログ出力
@@ -72,13 +73,13 @@ def create_serach_info_list(filename) -> dict:
 
 # URL生成
 # 著者名から検索用URLを生成する
-def create_url(name_list: dict) -> list:
+def create_url(name_data: dict) -> list:
     debug_log("create_url")
     url_list = []
     # 全key名でURLを生成し，listに保持
-    for search_name in list(name_list.keys):
+    for search_name in name_data.keys():
         debug_log(search_name)
-        url_list.append(AMAZON_SEARCH_URL+search_name)
+        url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote_plus(search_name,encoding="utf-8")) # 日本語を16進数に変換
     return url_list
 
 
@@ -109,14 +110,10 @@ def main():
     debug_log("Start\n")
     # 検索データ取得
     search_infos = create_serach_info_list(READ_FILE_NAME)
-    print(search_infos.keys())
-    """
-    url_list = create_url(search_dict)
-    for name in url_list:
-        print(name)
-        #rtn = requests.get(name)
-        #print(rtn.text)
-        """
+    url_list = create_url(search_infos)
+    for url in url_list:
+        search_result = requests.get(url)
+        print(search_result.text)
     
 
 if __name__ == "__main__":
