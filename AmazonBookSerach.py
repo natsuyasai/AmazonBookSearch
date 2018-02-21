@@ -27,6 +27,7 @@ import requests # webページ取得用
 import lxml     # webページ取得データ取得
 import csv      # CSV読み書き
 import urllib   # urlエンコード変換
+import bs4
 #*************************************
 
 #************** Const Define ***************
@@ -34,14 +35,23 @@ READ_FILE_NAME = "SearchList.csv"         # 読込みファイル名
 AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
+# デバッグ関連クラス
+class Debug:
+    # ログ出力
+    def dprint(self, print_data):
+        print(print_data)
+    
+    # 一時出力
+    def tmpprint(self, print_data):
+        print(print_data)
 
-# ログ出力
-def debug_log(print_data):
-    print(print_data)
+# デバッグ出力関連クラスインスタンス
+dbg = Debug()
+
 
 # CSV読み込み
 def read_csv(filename: str, is_read_header : bool) -> dict:
-    debug_log("read_csv")
+    dbg.dprint("read_csv")
     # csv読込み
     with open(filename, encoding="UTF-8") as csvfile:
         reader = csv.reader(csvfile)
@@ -52,7 +62,7 @@ def read_csv(filename: str, is_read_header : bool) -> dict:
 # 検索データ情報リストの生成
 # 著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する
 def create_serach_info_list(filename) -> dict:
-    debug_log("create_serach_info_list")
+    dbg.dprint("create_serach_info_list")
     serach_list_dict = {}
     # csv読込み
     with open(filename, encoding="UTF-8") as csvfile:
@@ -74,11 +84,11 @@ def create_serach_info_list(filename) -> dict:
 # URL生成
 # 著者名から検索用URLを生成する
 def create_url(name_data: dict) -> list:
-    debug_log("create_url")
+    dbg.dprint("create_url")
     url_list = []
     # 全key名でURLを生成し，listに保持
     for search_name in name_data.keys():
-        debug_log(search_name)
+        dbg.tmpprint(search_name)
         url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote_plus(search_name,encoding="utf-8")) # 日本語を16進数に変換
     return url_list
 
@@ -107,13 +117,21 @@ def create_url(name_data: dict) -> list:
 
 # エントリポイント
 def main():
-    debug_log("Start\n")
+    dbg.dprint("Start\n")
     # 検索データ取得
     search_infos = create_serach_info_list(READ_FILE_NAME)
+    # url生成
     url_list = create_url(search_infos)
+    # 検索
     for url in url_list:
+        # 検索結果取得
+        dbg.tmpprint(url)
         search_result = requests.get(url)
-        print(search_result.text)
+        #debug_log(search_result.text)
+        # htmlパース
+        search_result.raise_for_status()
+        soup = bs4.BeautifulSoup(search_result.text, "html.parser")
+        dbg.tmpprint(soup.title)
     
 
 if __name__ == "__main__":
