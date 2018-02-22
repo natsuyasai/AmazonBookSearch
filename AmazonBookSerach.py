@@ -4,16 +4,6 @@
 """
 新刊チェックプログラム
 
-使用パッケージ
-Webページを取得する：requests
-Webページからデータを抜き出す：lxml
-Webページの自動操作：selenium
-
-戻り値指定
-def hoge() -> int:
-    return hogehoge
-"""
-"""
 実装メモ
  amazon検索プログラム
  ワードを別ファイルに登録．
@@ -46,6 +36,17 @@ class Debug:
 
 # デバッグ出力関連クラスインスタンス
 dbg = Debug()
+
+# 検索結果情報データ構造クラス
+class BookInfo:
+    def __init__(self):
+        self.autor = ""         # 著者名
+        self.title = ""         # 書名
+        self.date = ""          # 発売日
+        self.price=""           # 価格
+        self.url=""             # 商品詳細ページへのURL
+
+        
 
 
 # CSV読み込み
@@ -103,24 +104,40 @@ def create_url(name_data: dict) -> list:
 # 著者名
 # 価格
 # 商品ページへのURL
-def analysis_url(html_info):
+def analysis_url(html_info) -> list:
     dbg.tmpprint(html_info)
     # htmlパース
     html_info.raise_for_status()
-    dbg.tmpprint(html_info.text)
     root = lxml.html.fromstring(html_info.text)
-    for tmpstr in root.xpath("//div[contains(@class, 'a-row')]"):
-        dbg.tmpprint(tmpstr.text)
+    divs = root.xpath("//div[contains(@class, 's-item-container')]") # 各商品部分取得
+    # note. ex) divs[0][2][0][0][0].items()[0] -> タイトル
+    book_analysis_info = [] # 解析後の情報(BookInfoを格納する)
+    for div in divs:
+        book_info = BookInfo()
+        # 文字列に変換(日本語が16進数表記になるため，デコードを行う)
+        dbg.tmpprint(div.text_content().encode("utf-8").decode("utf-8"))
+    
+    return book_analysis_info
 
 # 本のタイトル取得
+def get_book_title() -> str:
+    return ""
 
 # 本の発売日取得
+def get_book_date() -> str:
+    return ""
 
 # 本の著者名取得
+def get_book_autor() -> str:
+    return ""
 
 # 本の価格取得
+def get_book_price() -> str:
+    return ""
 
 # 本の商品ページURL取得
+def get_book_url() -> str:
+    return ""
 
 # エントリポイント
 def main():
