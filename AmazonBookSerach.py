@@ -23,11 +23,10 @@ def hoge() -> int:
  起動時にcsvが存在すれば，その一覧にある本は対象から省くようにする
 """
 #************** import ***************
-import requests # webページ取得用
-import lxml     # webページ取得データ取得
-import csv      # CSV読み書き
-import urllib   # urlエンコード変換
-import bs4
+import requests     # webページ取得用
+import lxml.html    # webページ取得データ取得
+import csv          # CSV読み書き
+import urllib       # urlエンコード変換
 #*************************************
 
 #************** Const Define ***************
@@ -104,6 +103,14 @@ def create_url(name_data: dict) -> list:
 # 著者名
 # 価格
 # 商品ページへのURL
+def analysis_url(html_info):
+    dbg.tmpprint(html_info)
+    # htmlパース
+    html_info.raise_for_status()
+    dbg.tmpprint(html_info.text)
+    root = lxml.html.fromstring(html_info.text)
+    for tmpstr in root.xpath("//div[contains(@class, 'a-row')]"):
+        dbg.tmpprint(tmpstr.text)
 
 # 本のタイトル取得
 
@@ -127,11 +134,8 @@ def main():
         # 検索結果取得
         dbg.tmpprint(url)
         search_result = requests.get(url)
-        #debug_log(search_result.text)
-        # htmlパース
-        search_result.raise_for_status()
-        soup = bs4.BeautifulSoup(search_result.text, "html.parser")
-        dbg.tmpprint(soup.title)
+        # 解析
+        analysis_url(search_result)
     
 
 if __name__ == "__main__":
