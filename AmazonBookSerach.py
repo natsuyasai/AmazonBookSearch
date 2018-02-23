@@ -37,6 +37,7 @@ class Debug:
 # デバッグ出力関連クラスインスタンス
 dbg = Debug()
 
+
 # 検索結果情報データ構造クラス
 class BookInfo:
     def __init__(self):
@@ -93,10 +94,6 @@ def create_url(name_data: dict) -> list:
     return url_list
 
 
-# 検索結果取得
-# 生成したURLから検索した結果を取得する
-
-
 # 検索結果解析
 # 検索結果から以下を解析
 # 本のタイトル
@@ -109,34 +106,46 @@ def analysis_url(html_info) -> list:
     # htmlパース
     html_info.raise_for_status()
     root = lxml.html.fromstring(html_info.text)
-    divs = root.xpath("//div[contains(@class, 's-item-container')]") # 各商品部分取得
+    items = root.xpath("//div[contains(@class, 's-item-container')]") # 各商品部分取得
     # note. ex) divs[0][2][0][0][0].items()[0] -> タイトル
     book_analysis_info = [] # 解析後の情報(BookInfoを格納する)
-    for div in divs:
+    for item in items:
         book_info = BookInfo()
+        # 情報解析/取得
+        # タイトル
+        book_info.title = get_book_title(item)
+        # 発売日
+        book_info.date = get_book_date(item)
+        # 著者名
+        book_info.autor = get_book_autor(item)
+        # 価格
+        book_info.price = get_book_price(item)
+        # 商品URL
+        book_info.url = get_book_url(item)
+        # 情報保持
+        book_analysis_info.append(book_info)
         # 文字列に変換(日本語が16進数表記になるため，デコードを行う)
-        dbg.tmpprint(div.text_content().encode("utf-8").decode("utf-8"))
-    
+        #dbg.tmpprint(item.text_content().encode("utf-8").decode("utf-8"))
     return book_analysis_info
 
 # 本のタイトル取得
-def get_book_title() -> str:
+def get_book_title(html_item : lxml.html.HtmlElement) -> str:
     return ""
 
 # 本の発売日取得
-def get_book_date() -> str:
+def get_book_date(html_item : lxml.html.HtmlElement) -> str:
     return ""
 
 # 本の著者名取得
-def get_book_autor() -> str:
+def get_book_autor(html_item : lxml.html.HtmlElement) -> str:
     return ""
 
 # 本の価格取得
-def get_book_price() -> str:
+def get_book_price(html_item : lxml.html.HtmlElement) -> str:
     return ""
 
 # 本の商品ページURL取得
-def get_book_url() -> str:
+def get_book_url(html_item : lxml.html.HtmlElement) -> str:
     return ""
 
 # エントリポイント
@@ -151,6 +160,8 @@ def main():
         # 検索結果取得
         dbg.tmpprint(url)
         search_result = requests.get(url)
+        if search_result.status_code != requests.codes["ok"]:
+            continue
         # 解析
         analysis_url(search_result)
     
