@@ -82,11 +82,15 @@ def main():
                 else:
                     if retry == REQUEST_RETRY_NUM:
                         print("request err")
+                        # 該当データ削除
+                        search_infos.pop(author_list[search_cnt])
+                        author_list.remove(search_cnt)
             if is_ok == False:
                 continue # 最後までだめなら次へ
         # 解析
         all_book_infos.append(analysis_url(search_result))
         search_cnt+=1
+    time.sleep(5) # 連続アクセスを避けるために少し待つ
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     write_csv(all_book_infos, author_list, search_infos)
@@ -154,7 +158,7 @@ def create_url(name_data: dict) -> list:
     # 全key名でURLを生成し，listに保持
     for search_name in name_data.keys():
         dbg.tmpprint(search_name)
-        url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote_plus(search_name,encoding="utf-8")) # 日本語を16進数に変換
+        url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote(search_name.encode("utf-8"))) # 日本語を16進数に変換
     return url_list
 
 
