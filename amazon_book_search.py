@@ -4,13 +4,19 @@
 """
 新刊チェックプログラム
 
-実装メモ
- 検索結果から，現在の日付以降の発売日となっている本の一覧を生成
- 起動時にcsvが存在すれば，その一覧にある本は対象から省くようにする
+検索対象リストファイル名 -> search_list.csv
+↓↓↓検索対象リストフォーマット(以下コピペ)↓↓↓
+著者名(名字と名前の間は空白を入れないこと),取得開始期間(空なら実行日を開始日として取得)
+XXXX,20XX/X/X
+XXXXX,
+XX,20XX/X/X
+↑↑↑
 """
 # import ***************************************************************************
+# 追加要 ***********
 import requests     # webページ取得用
 import lxml.html    # webページ取得データ取得
+#*******************
 import csv          # CSV読み書き
 import urllib       # urlエンコード変換
 import datetime     # 日付判定
@@ -101,6 +107,7 @@ def main():
     # 検索
     search_cnt = 0
     all_book_infos = []
+    
     for url in url_list:
         # 検索結果取得
         dbg.tmpprint(url)
@@ -184,8 +191,9 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
     [I] all_book_infos : 解析後の本情報(全著者分)，author_list : 著者名リスト，output_date : 出力対象の日付
     """
     dbg.tmpprint("func : write_csv")
+    output_filename = "new_book_info_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
     #csvオープン
-    with open("new_book_info.csv", mode="a", newline="") as csvfile:
+    with open(output_filename, mode="a", newline="") as csvfile:
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
         # 出力文字リスト生成
         book_info = BookInfo()
