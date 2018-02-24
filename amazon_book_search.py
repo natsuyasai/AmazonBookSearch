@@ -15,7 +15,6 @@ import urllib       # urlエンコード変換
 import datetime     # 日付判定
 import time         # wait用
 import re           # 文字列解析
-import threading    # スレッド
 import os           # ファイル確認
 #***********************************************************************************
 
@@ -53,34 +52,6 @@ class Debug:
 # デバッグ出力関連クラスインスタンス
 dbg = Debug()
 #***********************************************************************************
-# Thread ****************************************************************************
-class ProgressThread(threading.Thread):
-    """ 進捗表示用スレッド
-    """
-
-    def __init__(self):
-        """ コンストラクタ  
-        [I] _author_num : 検索対象数
-        """
-        super(ProgressThread, self).__init__()
-        self.end_event = threading.Event()  # スレッド終了用イベントフラグ
-
-    def run(self):
-        """ スレッド実行
-        """
-        while True:
-            print(".", end="")
-            time.sleep(1)
-            if self.end_event.is_set() == True:
-                break
-    
-    def end_thread(self):
-        """ スレッド終了
-        """
-        self.end_event.set()
-
-#***********************************************************************************
-
 
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 def main():
@@ -98,11 +69,7 @@ def main():
         author_list.append(author)
     # url生成
     url_list = create_url(search_infos)
-    author_num = (len(author_list) + 1)
-    # スレッド生成
-    progress_thread = ProgressThread()
-    # スレッド開始
-    progress_thread.start()
+    author_num = len(author_list)
     # 検索
     search_cnt = 0
     all_book_infos = []
@@ -137,10 +104,6 @@ def main():
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     write_csv(all_book_infos, author_list, search_infos)
-
-    # スレッド終了
-    progress_thread.end_thread()
-    progress_thread.join()
     print("finish!")
 
 #************************************************************************************************
