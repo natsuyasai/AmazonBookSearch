@@ -46,7 +46,8 @@ class Debug:
     
     # 一時出力
     def tmpprint(self, print_data):
-        print(print_data)
+        return
+        #print(print_data)
 
 # デバッグ出力関連クラスインスタンス
 dbg = Debug()
@@ -55,7 +56,7 @@ dbg = Debug()
 
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 def main():
-    dbg.dprint("Start\n")
+    dbg.tmpprint("Start\n")
     # 検索データ取得
     search_infos = create_serach_info_list(READ_FILE_NAME)
     # 著者リスト生成
@@ -103,8 +104,11 @@ def main():
 # 関数実装部
 #************************************************************************************************
 
-# BOM確認
 def is_utf8_file_with_bom(filename) -> bool:
+    """ BOM確認用関数  
+    [I] filename : 確認対象ファイル名  
+    [O] True : BOM付き，False : BOMなし
+    """
     with open(filename, mode="r", encoding="utf-8",newline="") as csvfile:
         temp = csv.reader(csvfile)
         line = next(temp)
@@ -112,10 +116,14 @@ def is_utf8_file_with_bom(filename) -> bool:
             return True
     return False
 
-# 検索データ情報リストの生成
-# 著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する
+
 def create_serach_info_list(filename) -> dict:
-    dbg.dprint("func : create_serach_info_list")
+    """ 検索データ情報リストの生成  
+    著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する  
+    [I] filename : 確認対象ファイル名  
+    [O] dict : キー=著者名，データ=検索開始日
+    """
+    dbg.tmpprint("func : create_serach_info_list")
     encode_str = "utf-8"
     if is_utf8_file_with_bom(filename) is True:
         encode_str = "utf-8-sig"    
@@ -133,10 +141,12 @@ def create_serach_info_list(filename) -> dict:
     return serach_list_dict
 
 
-# CVS書き込み
-# 著者名と本リスト，URL，発売日，価格を保存する
 def write_csv(all_book_infos:list, author_list:list, output_date:dict):
-    dbg.dprint("func : write_csv")
+    """ CSV書き込み  
+    著者名と本リスト，URL，発売日，価格を保存する  
+    [I] all_book_infos : 解析後の本情報(全著者分)，author_list : 著者名リスト，output_date : 出力対象の日付
+    """
+    dbg.tmpprint("func : write_csv")
     #csvオープン
     with open("new_book_info.csv", mode="a", newline="") as csvfile:
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
@@ -165,14 +175,18 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
                             csvfile.write(output_str)
                 except IndexError:
                     print("IndexError!! -> " + author)
-                    pass
+                    book_info_cnt -= 1
+                    continue
                 book_info_cnt += 1
         
 
-# URL生成
-# 著者名から検索用URLを生成する
 def create_url(name_data: dict) -> list:
-    dbg.dprint("func : create_url")
+    """ URL生成  
+    著者名から検索用URLを生成する  
+    [I] name_data : 著者名リスト  
+    [O] list : URLリスト
+    """
+    dbg.tmpprint("func : create_url")
     url_list = []
     # 全key名でURLを生成し，listに保持
     for search_name in name_data.keys():
@@ -181,15 +195,18 @@ def create_url(name_data: dict) -> list:
     return url_list
 
 
-# 検索結果解析
-# 検索結果から以下を解析
-# 本のタイトル
-# 発売日
-# 著者名
-# 価格
-# 商品ページへのURL
 def analysis_url(html_info: requests.models.Response) -> BookInfo:
-    dbg.dprint("func : analysis_url")
+    """ 検索結果解析
+    検索結果から以下を解析  
+    本のタイトル  
+    発売日  
+    著者名  
+    価格  
+    商品ページへのURL  
+    [I] html_info : requets.get結果  
+    [O] BookInfo : 解析結果
+    """
+    dbg.tmpprint("func : analysis_url")
     dbg.tmpprint(html_info)
     # htmlパース
     html_info.raise_for_status()
@@ -210,10 +227,12 @@ def analysis_url(html_info: requests.models.Response) -> BookInfo:
     return book_info
 
 
-
-# 本のタイトル取得
-def get_book_title(html_item : lxml.html.HtmlElement) -> str:
-    dbg.dprint("func : get_book_title")
+def get_book_title(html_item : lxml.html.HtmlElement) -> list:
+    """ 本のタイトル取得  
+    [I] html_item : htmlデータ  
+    [O] list : 本のタイトルリスト
+    """
+    dbg.tmpprint("func : get_book_title")
     # 商品タイトル部分抽出
     title_list = []
     titles = html_item.xpath(
@@ -227,9 +246,12 @@ def get_book_title(html_item : lxml.html.HtmlElement) -> str:
     return title_list
 
 
-# 本の発売日取得
-def get_book_date(html_item : lxml.html.HtmlElement) -> str:
-    dbg.dprint("func : get_book_date")
+def get_book_date(html_item : lxml.html.HtmlElement) -> list:
+    """ 本の発売日取得  
+    [I] html_item : htmlデータ  
+    [O] list : 本の発売日リスト
+    """
+    dbg.tmpprint("func : get_book_date")
     date_list = []
     # 発売日部分取得
     dates = html_item.xpath(
@@ -252,9 +274,12 @@ def get_book_date(html_item : lxml.html.HtmlElement) -> str:
     return date_list
 
 
-# 本の著者名取得
-def get_book_author(html_item : lxml.html.HtmlElement) -> str:
-    dbg.dprint("func : get_book_author")
+def get_book_author(html_item : lxml.html.HtmlElement) -> list:
+    """ 本の著者名取得  
+    [I] html_item : htmlデータ  
+    [O] list : 本の著者名リスト
+    """
+    dbg.tmpprint("func : get_book_author")
     # 著者名部分抽出
     # note. アマゾンの下記要素を取得すると，「日付→空白→著者名」の順に取得される．
     #       そのため，3要素目以降を取得するようにする
@@ -290,9 +315,12 @@ def get_book_author(html_item : lxml.html.HtmlElement) -> str:
     return author_list
 
 
-# 本の価格取得
-def get_book_price(html_item : lxml.html.HtmlElement) -> str:
-    dbg.dprint("func : get_book_price")
+def get_book_price(html_item : lxml.html.HtmlElement) -> list:
+    """ 本の価格取得  
+    [I] html_item : htmlデータ  
+    [O] list : 本の価格リスト
+    """
+    dbg.tmpprint("func : get_book_price")
     # 価格部分抽出
     price_list = []
     prices = html_item.xpath(
@@ -308,8 +336,12 @@ def get_book_price(html_item : lxml.html.HtmlElement) -> str:
 
 
 # 本の商品ページURL取得
-def get_book_url(html_item : lxml.html.HtmlElement, title_info:list) -> str:
-    dbg.dprint("func : get_book_url")
+def get_book_url(html_item : lxml.html.HtmlElement, title_info:list) -> list:
+    """ 本の商品ページURL取得  
+    [I] html_item : htmlデータ  
+    [O] list : 本の商品ページリスト
+    """
+    dbg.tmpprint("func : get_book_url")
     # URL部分抽出
     url_list = []
     urls = html_item.xpath(
