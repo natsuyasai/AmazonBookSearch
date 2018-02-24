@@ -4,13 +4,6 @@
 """
 新刊チェックプログラム
 
-検索対象リストファイル名 -> search_list.csv
-↓↓↓検索対象リストフォーマット(以下コピペ)↓↓↓
-著者名(名字と名前の間は空白を入れないこと),取得開始期間(空なら実行日を開始日として取得)
-XXXX,20XX/X/X
-XXXXX,
-XX,20XX/X/X
-↑↑↑
 """
 # import ***************************************************************************
 # 追加要 ***********
@@ -23,6 +16,7 @@ import datetime     # 日付判定
 import time         # wait用
 import re           # 文字列解析
 import threading    # スレッド
+import os           # ファイル確認
 #***********************************************************************************
 
 # Const Define *********************************************************************
@@ -91,8 +85,13 @@ class ProgressThread(threading.Thread):
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 def main():
     dbg.tmpprint("Start\n")
+    # ファイルチェック
+    # ファイルが見つからなかった場合は，新規にファイルを作成し，終了する
+    if check_search_file(READ_FILE_NAME) == False:
+        print("finish!")
+        return
     # 検索データ取得
-    search_infos = create_serach_info_list(READ_FILE_NAME)
+    search_infos = create_search_info_list(READ_FILE_NAME)
     # 著者リスト生成
     author_list = []
     for author in search_infos.keys():
@@ -148,6 +147,23 @@ def main():
 # 関数実装部
 #************************************************************************************************
 
+def check_search_file(filename) -> bool:
+    """ 検索リストファイル確認  
+    ファイルが存在しなければ，新たに生成する  
+    [I] filename : 確認対象ファイル名
+    """
+    dbg.tmpprint("func : check_search_file")
+    if os.path.isfile(filename) == True:
+        return True
+    else:
+        print("検索対象リストが見つかりません．新規に生成します．")
+        # ファイル生成
+        strs = "著者名(名字と名前の間は空白を入れないこと),取得開始期間(空なら実行日を開始日として取得)\n"
+        with open(filename, mode="w", encoding="utf-8-sig" ,newline="") as csvfile:
+            csvfile.write(strs)
+        return False
+
+
 def is_utf8_file_with_bom(filename) -> bool:
     """ BOM確認用関数  
     [I] filename : 確認対象ファイル名  
@@ -161,13 +177,13 @@ def is_utf8_file_with_bom(filename) -> bool:
     return False
 
 
-def create_serach_info_list(filename) -> dict:
+def create_search_info_list(filename) -> dict:
     """ 検索データ情報リストの生成  
     著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する  
     [I] filename : 確認対象ファイル名  
     [O] dict : キー=著者名，データ=検索開始日
     """
-    dbg.tmpprint("func : create_serach_info_list")
+    dbg.tmpprint("func : create_search_info_list")
     encode_str = "utf-8"
     if is_utf8_file_with_bom(filename) is True:
         encode_str = "utf-8-sig"    
