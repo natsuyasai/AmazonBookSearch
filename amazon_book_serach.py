@@ -22,6 +22,7 @@ import re           # 文字列解析
 READ_FILE_NAME = "search_list.csv"         # 読込みファイル名
 AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
+
 REQUEST_RETRY_NUM = 5   # リクエストリトライ回数
 REQUEST_WAIT_TIME = 1   # リトライ待ち時間
 #***********************************************************************************
@@ -73,24 +74,25 @@ def main():
         # 失敗時は一定時間待ってから再度取得を試みる
         if search_result.status_code != requests.codes["ok"]:
             is_ok = False
-            for retry in range(1,REQUEST_RETRY_NUM,1):
-                time.sleep(REQUEST_WAIT_TIME)
+            for retry in range(0,REQUEST_RETRY_NUM,1):
+                time.sleep(REQUEST_WAIT_TIME + retry)
                 search_result = requests.get(url)
                 if search_result.status_code == requests.codes["ok"]:
                     is_ok = True
                     break
                 else:
                     if retry == REQUEST_RETRY_NUM:
-                        print("request err")
-                        # 該当データ削除
-                        search_infos.pop(author_list[search_cnt])
-                        author_list.remove(search_cnt)
+                        print("request err -> " + author_list[search_cnt])
             if is_ok == False:
+                # 該当データ削除
+                search_infos.pop(author_list[search_cnt])
+                author_list.pop(search_cnt)
                 continue # 最後までだめなら次へ
         # 解析
         all_book_infos.append(analysis_url(search_result))
         search_cnt+=1
-    time.sleep(5) # 連続アクセスを避けるために少し待つ
+        time.sleep(10) # 連続アクセスを避けるために少し待つ
+
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     write_csv(all_book_infos, author_list, search_infos)
@@ -101,13 +103,25 @@ def main():
 # 関数実装部
 #************************************************************************************************
 
+# BOM確認
+def is_utf8_file_with_bom(filename) -> bool:
+    with open(filename, mode="r", encoding="utf-8",newline="") as csvfile:
+        temp = csv.reader(csvfile)
+        line = next(temp)
+        if line[0].find("\ufeff") != -1:
+            return True
+    return False
+
 # 検索データ情報リストの生成
 # 著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する
 def create_serach_info_list(filename) -> dict:
     dbg.dprint("func : create_serach_info_list")
+    encode_str = "utf-8"
+    if is_utf8_file_with_bom(filename) is True:
+        encode_str = "utf-8-sig"    
     serach_list_dict = {}
     # csv読込み
-    with open(filename, mode="r", encoding="utf-8",newline="") as csvfile:
+    with open(filename, mode="r", encoding=encode_str, newline="") as csvfile:
         reader = csv.reader(csvfile)
         next(reader)   #  ヘッダ読み飛ばし
         # データ生成
@@ -123,32 +137,37 @@ def create_serach_info_list(filename) -> dict:
 # 著者名と本リスト，URL，発売日，価格を保存する
 def write_csv(all_book_infos:list, author_list:list, output_date:dict):
     dbg.dprint("func : write_csv")
-    # 出力文字リスト生成
-    output_str=""
-    book_info = BookInfo()
-    # 検索対象データ分ループ
-    for author_cnt in range(0, len(author_list), 1):
-        book_info = all_book_infos[author_cnt]
-        # 1検索対象データの結果リストから，著者名が一致するもののみを取得
-        book_info_cnt = 0
-        for author in book_info.author:
-            # 著者名から空白文字を削除する
-            author = author.replace(" ","")
-            if author.find(author_list[author_cnt]) != -1:
-                # 期間が指定日以降なら保存する
-                if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
-                    >= datetime.datetime.strptime(output_date[author_list[author_cnt]],"%Y/%m/%d"):
-                    output_str += author + ","                          # 著者名
-                    output_str += book_info.title[book_info_cnt] + ","  # タイトル
-                    output_str += book_info.date[book_info_cnt] + ","   # 発売日
-                    #output_str += book_info.price[book_info_cnt] + "," # 価格
-                    output_str += ","
-                    output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
-            book_info_cnt += 1
     #csvオープン
     with open("new_book_info.csv", mode="a", newline="") as csvfile:
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
-        csvfile.write(output_str)
+        # 出力文字リスト生成
+        book_info = BookInfo()
+        # 検索対象データ分ループ
+        for author_cnt in range(0, len(author_list), 1):
+            book_info = all_book_infos[author_cnt]
+            # 1検索対象データの結果リストから，著者名が一致するもののみを取得
+            book_info_cnt = 0
+            for author in book_info.author:
+                # 著者名から空白文字を削除する
+                author = author.replace(" ","")
+                try:
+                    if author.find(author_list[author_cnt]) != -1:
+                        # 期間が指定日以降なら保存する
+                        if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
+                            >= datetime.datetime.strptime(output_date[author_list[author_cnt]],"%Y/%m/%d"):
+                            output_str=""
+                            output_str += author + ","                          # 著者名
+                            output_str += book_info.title[book_info_cnt] + ","  # タイトル
+                            output_str += book_info.date[book_info_cnt] + ","   # 発売日
+                            #output_str += book_info.price[book_info_cnt] + "," # 価格
+                            output_str += ","
+                            output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
+                            csvfile.write(output_str)
+                except IndexError:
+                    print("IndexError!! -> " + author)
+                    pass
+                book_info_cnt += 1
+        
 
 # URL生成
 # 著者名から検索用URLを生成する
@@ -175,7 +194,6 @@ def analysis_url(html_info: requests.models.Response) -> BookInfo:
     # htmlパース
     html_info.raise_for_status()
     root = lxml.html.fromstring(html_info.text)
-    #items = root.xpath("//div[contains(@class, 's-item-container')]") # 各商品部分取得
     book_info = BookInfo()
     # 情報解析/取得
     # タイトル
@@ -225,7 +243,10 @@ def get_book_date(html_item : lxml.html.HtmlElement) -> str:
         try:
             date_str = datetime.datetime.strptime(date.text_content().encode("utf-8").decode("utf-8"), "%Y/%m/%d").strftime("%Y/%m/%d")
         except ValueError:
-            continue
+            try:
+                date_str = datetime.datetime.strptime(date.text_content().encode("utf-8").decode("utf-8"), "%Y/%m").strftime("%Y/%m/%d")
+            except ValueError:
+                continue
         date_list.append(date_str)
         dbg.tmpprint(date_str)
     return date_list
@@ -250,17 +271,21 @@ def get_book_author(html_item : lxml.html.HtmlElement) -> str:
             datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m/%d").strftime("%Y/%m/%d")
             data_cnt = 1
         except ValueError:
-            tmp_str = author.text_content().encode("utf-8").decode("utf-8")
-            if len(tmp_str) != 0:
-                # 複数著者名
-                if data_cnt == 4:
-                    mult_author = author_list[-1]   # 末尾データ取得
-                    author_list.pop()               # 末尾データ削除
-                    author_list.append(mult_author + tmp_str)   # 最終データに現在の著者名をつなげた文字列とする
-                else:
-                    # 著者名保持
-                    author_list.append(tmp_str)
-                    dbg.tmpprint(tmp_str)
+            try:
+                datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m").strftime("%Y/%m/%d")
+                data_cnt = 1
+            except ValueError:
+                tmp_str = author.text_content().encode("utf-8").decode("utf-8")
+                if len(tmp_str) != 0:
+                    # 複数著者名
+                    if data_cnt == 4:
+                        mult_author = author_list[-1]   # 末尾データ取得
+                        author_list.pop()               # 末尾データ削除
+                        author_list.append(mult_author + tmp_str)   # 最終データに現在の著者名をつなげた文字列とする
+                    else:
+                        # 著者名保持
+                        author_list.append(tmp_str)
+                        dbg.tmpprint(tmp_str)
         data_cnt+=1
     return author_list
 
