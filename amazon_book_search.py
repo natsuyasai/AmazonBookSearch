@@ -24,7 +24,7 @@ AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
 REQUEST_RETRY_NUM = 5   # リクエストリトライ回数
-REQUEST_WAIT_TIME = 1   # リトライ待ち時間
+REQUEST_WAIT_TIME = 10  # リトライ待ち時間(s)
 #***********************************************************************************
 
 # Struct ***************************************************************************
@@ -82,7 +82,7 @@ def main():
         if search_result.status_code != requests.codes["ok"]:
             is_ok = False
             for retry in range(0,REQUEST_RETRY_NUM,1):
-                time.sleep(REQUEST_WAIT_TIME + retry)
+                time.sleep(REQUEST_WAIT_TIME *( retry+1))
                 search_result = requests.get(url)
                 if search_result.status_code == requests.codes["ok"]:
                     is_ok = True
@@ -96,10 +96,10 @@ def main():
                 author_list.pop(search_cnt)
                 continue # 最後までだめなら次へ
         # 解析
-        print("\nsearch author(" +  str(search_cnt + 1) + "/" + str(author_num) + ") -> " + author_list[search_cnt])
+        print("search author(" +  str(search_cnt + 1) + "/" + str(author_num) + ") -> " + author_list[search_cnt])
         all_book_infos.append(analysis_url(search_result))
         search_cnt+=1
-        time.sleep(10) # 連続アクセスを避けるために少し待つ
+        #time.sleep(10) # 連続アクセスを避けるために少し待つ
 
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
