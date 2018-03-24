@@ -103,6 +103,8 @@ def main():
 
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
+    # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
+    # ファイルがなければ全て通知
     write_csv(all_book_infos, author_list, search_infos)
     print("finish!")
 
@@ -134,7 +136,10 @@ def is_utf8_file_with_bom(filename) -> bool:
     """
     with open(filename, mode="r", encoding="utf-8",newline="") as csvfile:
         temp = csv.reader(csvfile)
-        line = next(temp)
+        try:
+            line = next(temp)
+        except:
+            return False # UTF8以外であった
         if line[0].find("\ufeff") != -1:
             return True
     return False
@@ -149,7 +154,9 @@ def create_search_info_list(filename) -> dict:
     dbg.tmpprint("func : create_search_info_list")
     encode_str = "utf-8"
     if is_utf8_file_with_bom(filename) is True:
-        encode_str = "utf-8-sig"    
+        encode_str = "utf-8-sig"
+    else:
+        encode_str = "shift_jis"
     serach_list_dict = {}
     # csv読込み
     with open(filename, mode="r", encoding=encode_str, newline="") as csvfile:
