@@ -32,9 +32,6 @@ class BookInfo:
 #***********************************************************************************
 
 class BookInfoScraping:
-    def __init__(self):
-        self.dbg = Debug() # デバッグ出力関連クラスインスタンス
-
     def analysis_url(self, html_info: requests.models.Response) -> BookInfo:
         """ 検索結果解析
         検索結果から以下を解析  
@@ -46,8 +43,8 @@ class BookInfoScraping:
         [I] html_info : requets.get結果  
         [O] BookInfo : 解析結果
         """
-        self.dbg.tmpprint("func : analysis_url")
-        self.dbg.tmpprint(html_info)
+        Debug.tmpprint("func : analysis_url")
+        Debug.tmpprint(html_info)
         # htmlパース
         html_info.raise_for_status()
         root = lxml.html.fromstring(html_info.text)
@@ -72,7 +69,7 @@ class BookInfoScraping:
         [I] html_item : htmlデータ  
         [O] list : 本のタイトルリスト
         """
-        self.dbg.tmpprint("func : get_book_title")
+        Debug.tmpprint("func : get_book_title")
         # 商品タイトル部分抽出
         title_list = []
         titles = html_item.xpath(
@@ -82,7 +79,7 @@ class BookInfoScraping:
             "//h2[contains(@class, 's-access-title')]")
         for title in titles:
             title_list.append(title.text_content().encode("utf-8").decode("utf-8"))
-            self.dbg.tmpprint(title.text_content().encode("utf-8").decode("utf-8"))
+            Debug.tmpprint(title.text_content().encode("utf-8").decode("utf-8"))
         return title_list
 
 
@@ -91,7 +88,7 @@ class BookInfoScraping:
         [I] html_item : htmlデータ  
         [O] list : 本の発売日リスト
         """
-        self.dbg.tmpprint("func : get_book_date")
+        Debug.tmpprint("func : get_book_date")
         date_list = []
         # 発売日部分取得
         dates = html_item.xpath(
@@ -110,7 +107,7 @@ class BookInfoScraping:
                 except ValueError:
                     continue
             date_list.append(date_str)
-            self.dbg.tmpprint(date_str)
+            Debug.tmpprint(date_str)
         return date_list
 
 
@@ -119,7 +116,7 @@ class BookInfoScraping:
         [I] html_item : htmlデータ  
         [O] list : 本の著者名リスト
         """
-        self.dbg.tmpprint("func : get_book_author")
+        Debug.tmpprint("func : get_book_author")
         # 著者名部分抽出
         # note. アマゾンの下記要素を取得すると，「日付→空白→著者名」の順に取得される．
         #       そのため，3要素目以降を取得するようにする
@@ -150,7 +147,7 @@ class BookInfoScraping:
                         else:
                             # 著者名保持
                             author_list.append(tmp_str)
-                            self.dbg.tmpprint(tmp_str)
+                            Debug.tmpprint(tmp_str)
             data_cnt+=1
         return author_list
 
@@ -160,7 +157,7 @@ class BookInfoScraping:
         [I] html_item : htmlデータ  
         [O] list : 本の価格リスト
         """
-        self.dbg.tmpprint("func : get_book_price")
+        Debug.tmpprint("func : get_book_price")
         # 価格部分抽出
         price_list = []
         prices = html_item.xpath(
@@ -171,7 +168,7 @@ class BookInfoScraping:
         # TODO: Kindle版のものも取れてしまうが，どう切り分けるべきか．．．
         for price in prices:
             price_list.append(price.text_content().encode("utf-8").decode("utf-8"))
-            self.dbg.tmpprint(price.text_content().encode("utf-8").decode("utf-8"))
+            Debug.tmpprint(price.text_content().encode("utf-8").decode("utf-8"))
         return price_list
 
 
@@ -181,7 +178,7 @@ class BookInfoScraping:
         [I] html_item : htmlデータ  
         [O] list : 本の商品ページリスト
         """
-        self.dbg.tmpprint("func : get_book_url")
+        Debug.tmpprint("func : get_book_url")
         # URL部分抽出
         url_list = []
         urls = html_item.xpath(
@@ -199,6 +196,6 @@ class BookInfoScraping:
                     title_cnt += 1
                 if item[0] == "href" and is_get_url == True:
                     url_list.append(item[1])
-                    self.dbg.tmpprint(item[1])
+                    Debug.tmpprint(item[1])
                     is_get_url = False
         return url_list
