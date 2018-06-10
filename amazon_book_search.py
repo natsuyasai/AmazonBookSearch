@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -8,7 +8,6 @@
 # import ***************************************************************************
 # 追加要 ***********
 import requests     # webページ取得用
-import lxml.html    # webページ取得データ取得
 #*******************
 import csv          # CSV読み書き
 import urllib       # urlエンコード変換
@@ -16,39 +15,35 @@ import datetime     # 日付判定
 import time         # wait用
 import re           # 文字列解析
 import os           # ファイル確認
+from enum import Enum # 列挙型用
+#*******************
+from debug_info import Debug
+from book_info_scraping import BookInfoScraping
 #***********************************************************************************
 
 # Const Define *********************************************************************
 READ_FILE_NAME = "search_list.csv"         # 読込みファイル名
-AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
+AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
+# https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=カタカナ&url=search-alias%3Dstripbooks&field-keywords=
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
+
+# LINE通知用
+LINE_NOTIFY_TOKEN = ''
+LINE_NOTIFY_API = 'https://notify-api.line.me/api/notify'
+
 
 REQUEST_RETRY_NUM = 5   # リクエストリトライ回数
 REQUEST_WAIT_TIME = 10  # リトライ待ち時間(s)
+
+class CsvEncodeType(Enum):
+    UTF_8 = 0
+    UTF_8_BOM = 1
+    SHIFT_JIS = 2
 #***********************************************************************************
 
 # Struct ***************************************************************************
-# 検索結果情報データ構造クラス
-class BookInfo:
-    def __init__(self):
-        self.author = []        # 著者名
-        self.title = []         # 書名
-        self.date = []          # 発売日
-        self.price = []         # 価格
-        self.url = []           # 商品詳細ページへのURL
 #***********************************************************************************
 # Debug ****************************************************************************
-# デバッグ関連クラス
-class Debug:
-    # ログ出力
-    def dprint(self, print_data):
-        print(print_data)
-    
-    # 一時出力
-    def tmpprint(self, print_data):
-        return
-        #print(print_data)
-
 # デバッグ出力関連クラスインスタンス
 dbg = Debug()
 #***********************************************************************************
@@ -73,7 +68,8 @@ def main():
     # 検索
     search_cnt = 0
     all_book_infos = []
-    
+    book_scraping = BookInfoScraping()
+
     for url in url_list:
         # 検索結果取得
         dbg.tmpprint(url)
@@ -97,7 +93,7 @@ def main():
                 continue # 最後までだめなら次へ
         # 解析
         print("search author(" +  str(search_cnt + 1) + "/" + str(author_num) + ") -> " + author_list[search_cnt])
-        all_book_infos.append(analysis_url(search_result))
+        all_book_infos.append(book_scraping.analysis_url(search_result))
         search_cnt+=1
         #time.sleep(10) # 連続アクセスを避けるために少し待つ
 
@@ -111,6 +107,16 @@ def main():
 #************************************************************************************************
 # 関数実装部
 #************************************************************************************************
+def line_notifycate(ntf_str):
+    """ LINE通知処理  
+    LINEへ通知メッセージを送信する  
+    [I] ntf_str : 通知内容
+    """
+    return
+    #payload = {'message': ntf_str}
+    #headers = {'Authorization': 'Bearer ' + LINE_NOTIFY_TOKEN}  # 発行したトークン
+    #line_ntf_result = requests.post(LINE_NOTIFY_API, data=payload, headers=headers)
+
 
 def check_search_file(filename) -> bool:
     """ 検索リストファイル確認  
@@ -129,20 +135,38 @@ def check_search_file(filename) -> bool:
         return False
 
 
-def is_utf8_file_with_bom(filename) -> bool:
+def is_utf8_file_with_bom(filename) -> CsvEncodeType:
     """ BOM確認用関数  
     [I] filename : 確認対象ファイル名  
-    [O] True : BOM付き，False : BOMなし
+    [O] SHIFT_JIS : sjis  
+    [O] UTF_8_BOM : UTF8BOM付き
+    [O] UTF_8 : UTF8
     """
     with open(filename, mode="r", encoding="utf-8",newline="") as csvfile:
         temp = csv.reader(csvfile)
         try:
             line = next(temp)
         except:
-            return False # UTF8以外であった
+            return CsvEncodeType.SHIFT_JIS # UTF8以外であった
         if line[0].find("\ufeff") != -1:
-            return True
-    return False
+            return CsvEncodeType.UTF_8_BOM # BOM付き
+    return CsvEncodeType.UTF_8 # UTF-8 BOMなし
+
+
+def create_url(name_data: dict) -> list:
+    """ URL生成  
+    著者名から検索用URLを生成する  
+    [I] name_data : 著者名リスト  
+    [O] list : URLリスト
+    """
+    dbg.tmpprint("func : create_url")
+    url_list = []
+    # 全key名でURLを生成し，listに保持
+    for search_name in name_data.keys():
+        dbg.tmpprint(search_name)
+        url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote(search_name.encode("utf-8"))) # 日本語を16進数に変換
+    return url_list
+
 
 
 def create_search_info_list(filename) -> dict:
@@ -153,10 +177,13 @@ def create_search_info_list(filename) -> dict:
     """
     dbg.tmpprint("func : create_search_info_list")
     encode_str = "utf-8"
-    if is_utf8_file_with_bom(filename) is True:
+    csv_type = is_utf8_file_with_bom(filename)
+    if csv_type is CsvEncodeType.UTF_8_BOM:
         encode_str = "utf-8-sig"
-    else:
+    elif csv_type is CsvEncodeType.SHIFT_JIS:
         encode_str = "shift_jis"
+    else:
+        encode_str = "utf-8"
     serach_list_dict = {}
     # csv読込み
     with open(filename, mode="r", encoding=encode_str, newline="") as csvfile:
@@ -204,195 +231,12 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
                             output_str += ","
                             output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
                             csvfile.write(output_str)
+                            line_notifycate(output_str) # 通知
                 except IndexError:
                     print("IndexError!! -> " + author)
                     book_info_cnt -= 1
                     continue
                 book_info_cnt += 1
-        
-
-def create_url(name_data: dict) -> list:
-    """ URL生成  
-    著者名から検索用URLを生成する  
-    [I] name_data : 著者名リスト  
-    [O] list : URLリスト
-    """
-    dbg.tmpprint("func : create_url")
-    url_list = []
-    # 全key名でURLを生成し，listに保持
-    for search_name in name_data.keys():
-        dbg.tmpprint(search_name)
-        url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote(search_name.encode("utf-8"))) # 日本語を16進数に変換
-    return url_list
-
-
-def analysis_url(html_info: requests.models.Response) -> BookInfo:
-    """ 検索結果解析
-    検索結果から以下を解析  
-    本のタイトル  
-    発売日  
-    著者名  
-    価格  
-    商品ページへのURL  
-    [I] html_info : requets.get結果  
-    [O] BookInfo : 解析結果
-    """
-    dbg.tmpprint("func : analysis_url")
-    dbg.tmpprint(html_info)
-    # htmlパース
-    html_info.raise_for_status()
-    root = lxml.html.fromstring(html_info.text)
-    book_info = BookInfo()
-    # 情報解析/取得
-    # タイトル
-    book_info.title = get_book_title(root)
-    # 発売日
-    book_info.date = get_book_date(root)
-    # 著者名
-    book_info.author = get_book_author(root)
-    # 価格
-    #book_info.price = get_book_price(root)
-    # 商品URL
-    book_info.url = get_book_url(root, book_info.title)
-
-    return book_info
-
-
-def get_book_title(html_item : lxml.html.HtmlElement) -> list:
-    """ 本のタイトル取得  
-    [I] html_item : htmlデータ  
-    [O] list : 本のタイトルリスト
-    """
-    dbg.tmpprint("func : get_book_title")
-    # 商品タイトル部分抽出
-    title_list = []
-    titles = html_item.xpath(
-        "//div[contains(@class, 's-item-container')]"\
-        "//div[contains(@class, 'a-row a-spacing-mini')]"\
-        "//div[contains(@class, 'a-row a-spacing-none')]"\
-        "//h2[contains(@class, 's-access-title')]")
-    for title in titles:
-        title_list.append(title.text_content().encode("utf-8").decode("utf-8"))
-        dbg.tmpprint(title.text_content().encode("utf-8").decode("utf-8"))
-    return title_list
-
-
-def get_book_date(html_item : lxml.html.HtmlElement) -> list:
-    """ 本の発売日取得  
-    [I] html_item : htmlデータ  
-    [O] list : 本の発売日リスト
-    """
-    dbg.tmpprint("func : get_book_date")
-    date_list = []
-    # 発売日部分取得
-    dates = html_item.xpath(
-        "//div[contains(@class, 's-item-container')]"\
-        "//div[contains(@class, 'a-row a-spacing-mini')]"\
-        "//div[contains(@class, 'a-row a-spacing-none')]"\
-        "//span[contains(@class, 'a-size-small a-color-secondary')]")
-    for date in dates:
-        date_str = ""
-        # 発売日以外の部分も引っかかってしまうため，日付情報に変換ができないものは弾く
-        try:
-            date_str = datetime.datetime.strptime(date.text_content().encode("utf-8").decode("utf-8"), "%Y/%m/%d").strftime("%Y/%m/%d")
-        except ValueError:
-            try:
-                date_str = datetime.datetime.strptime(date.text_content().encode("utf-8").decode("utf-8"), "%Y/%m").strftime("%Y/%m/%d")
-            except ValueError:
-                continue
-        date_list.append(date_str)
-        dbg.tmpprint(date_str)
-    return date_list
-
-
-def get_book_author(html_item : lxml.html.HtmlElement) -> list:
-    """ 本の著者名取得  
-    [I] html_item : htmlデータ  
-    [O] list : 本の著者名リスト
-    """
-    dbg.tmpprint("func : get_book_author")
-    # 著者名部分抽出
-    # note. アマゾンの下記要素を取得すると，「日付→空白→著者名」の順に取得される．
-    #       そのため，3要素目以降を取得するようにする
-    author_list = []
-    authors = html_item.xpath(
-        "//div[contains(@class, 's-item-container')]"\
-        "//div[contains(@class, 'a-row a-spacing-mini')]"\
-        "//div[contains(@class, 'a-row a-spacing-none')]"\
-        "//span[contains(@class, 'a-size-small a-color-secondary')]")
-    data_cnt = 1
-    for author in authors:
-        # 日付でなく且つ空白でなければ著者情報
-        try:
-            datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m/%d").strftime("%Y/%m/%d")
-            data_cnt = 1
-        except ValueError:
-            try:
-                datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m").strftime("%Y/%m/%d")
-                data_cnt = 1
-            except ValueError:
-                tmp_str = author.text_content().encode("utf-8").decode("utf-8")
-                if len(tmp_str) != 0:
-                    # 複数著者名
-                    if data_cnt == 4:
-                        mult_author = author_list[-1]   # 末尾データ取得
-                        author_list.pop()               # 末尾データ削除
-                        author_list.append(mult_author + tmp_str)   # 最終データに現在の著者名をつなげた文字列とする
-                    else:
-                        # 著者名保持
-                        author_list.append(tmp_str)
-                        dbg.tmpprint(tmp_str)
-        data_cnt+=1
-    return author_list
-
-
-def get_book_price(html_item : lxml.html.HtmlElement) -> list:
-    """ 本の価格取得  
-    [I] html_item : htmlデータ  
-    [O] list : 本の価格リスト
-    """
-    dbg.tmpprint("func : get_book_price")
-    # 価格部分抽出
-    price_list = []
-    prices = html_item.xpath(
-        "//div[contains(@class, 's-item-container')]"\
-        "//div[contains(@class, 'a-row a-spacing-none')]"\
-        "//a[contains(@class, 'a-link-normal a-text-normal')]"\
-        "//span[contains(@class, 'a-size-base a-color-price s-price a-text-bold')]")
-    # TODO: Kindle版のものも取れてしまうが，どう切り分けるべきか．．．
-    for price in prices:
-        price_list.append(price.text_content().encode("utf-8").decode("utf-8"))
-        dbg.tmpprint(price.text_content().encode("utf-8").decode("utf-8"))
-    return price_list
-
-
-# 本の商品ページURL取得
-def get_book_url(html_item : lxml.html.HtmlElement, title_info:list) -> list:
-    """ 本の商品ページURL取得  
-    [I] html_item : htmlデータ  
-    [O] list : 本の商品ページリスト
-    """
-    dbg.tmpprint("func : get_book_url")
-    # URL部分抽出
-    url_list = []
-    urls = html_item.xpath(
-        "//div[contains(@class, 's-item-container')]"\
-        "//div[contains(@class, 'a-row a-spacing-mini')]"\
-        "//div[contains(@class, 'a-row a-spacing-none')]"\
-        "//a[contains(@class, 'a-link-normal s-access-detail-page  s-color-twister-title-link a-text-normal')]")
-    title_cnt = 0
-    is_get_url = False
-    for url in urls:
-        for item in url.items(): # hrefにURLがあるため，それを探索し，取得する
-            # タイトルと一致するならばその1回だけURLを取得する
-            if item[0] == "title" and item[1] == title_info[title_cnt]:
-                is_get_url = True
-                title_cnt += 1
-            if item[0] == "href" and is_get_url == True:
-                url_list.append(item[1])
-                dbg.tmpprint(item[1])
-                is_get_url = False
-    return url_list
 
 
 # 実行
