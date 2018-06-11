@@ -26,6 +26,14 @@ AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/url=search-alias%3Dstripbooks&fi
 #***********************************************************************************
 
 class BookInfoCrawling:
+
+    @staticmethod
+    def create_header() -> dict:
+        """ リクエストヘッダ生成  
+        リクエスト用のヘッダ情報を返す
+        """
+        return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.42'}
+
     
     def create_url(self, name_data: dict) -> list:
         """ URL生成  

@@ -19,6 +19,7 @@ import os           # ファイル確認
 from debug_info import Debug
 from book_info_crawling import BookInfoCrawling
 from book_info_scraping import BookInfoScraping
+from book_info_scraping import BookInfo
 from line_notifycate import LineNotifycate
 #***********************************************************************************
 
@@ -52,11 +53,12 @@ def main():
     search_cnt = 0
     all_book_infos = []
     book_scraping = BookInfoScraping()
+    headers = BookInfoCrawling.create_header()
 
     for url in url_list:
         # 検索結果取得
         Debug.tmpprint(url)
-        search_result = requests.get(url)
+        search_result = requests.get(url, headers=headers)
         # 失敗時は一定時間待ってから再度取得を試みる
         if search_result.status_code != requests.codes["ok"]:
             is_ok = False
@@ -76,10 +78,12 @@ def main():
                 continue # 最後までだめなら次へ
         # 解析
         print("search author(" +  str(search_cnt + 1) + "/" + str(author_num) + ") -> " + author_list[search_cnt])
-        all_book_infos.append(book_scraping.analysis_url(search_result))
+        one_author_book_info = book_scraping.analysis_url(search_result)
+        all_book_infos.append(one_author_book_info)
+        # 結果出力
+        #output_result(one_author_book_info, author_list[search_cnt], search_infos[author_list[search_cnt]])
         search_cnt+=1
-        #time.sleep(10) # 連続アクセスを避けるために少し待つ
-
+        
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
@@ -118,8 +122,6 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
     #csvオープン
     with open(output_filename, mode="a", newline="") as csvfile:
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
-        # 出力文字リスト生成
-        book_info = BookInfoScraping()
         # 検索対象データ分ループ
         for author_cnt in range(0, len(author_list), 1):
             book_info = all_book_infos[author_cnt]
@@ -146,6 +148,36 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
                     book_info_cnt -= 1
                     continue
                 book_info_cnt += 1
+
+
+def output_result(book_info:BookInfo, search_author:str, output_date:str):
+    """ 結果出力 
+    著者名と本リスト，URL，発売日，価格を出力する  
+    [I] book_info : 解析後の本情報(1著者)search_author : 著者名，output_date : 出力対象の日付
+    """
+    # 1検索対象データの結果リストから，著者名が一致するもののみを取得
+    book_info_cnt = 0
+    for author in book_info.author:
+        # 著者名から空白文字を削除する
+        author = author.replace(" ","")
+        try:
+            if author.find(search_author) != -1:
+                # 期間が指定日以降なら保存する
+                if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
+                    >= datetime.datetime.strptime(output_date, "%Y/%m/%d"):
+                    output_str=""
+                    output_str += author + ","                          # 著者名
+                    output_str += book_info.title[book_info_cnt] + ","  # タイトル
+                    output_str += book_info.date[book_info_cnt] + ","   # 発売日
+                    #output_str += book_info.price[book_info_cnt] + "," # 価格
+                    output_str += ","
+                    output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
+                    print(output_str)
+        except IndexError:
+            print("IndexError!! -> " + author)
+            book_info_cnt -= 1
+            continue
+        book_info_cnt += 1
 
 
 # 実行
