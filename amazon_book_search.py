@@ -12,7 +12,6 @@ import requests     # webページ取得用
 import csv          # CSV読み書き
 import urllib       # urlエンコード変換
 import datetime     # 日付判定
-import time         # wait用
 import re           # 文字列解析
 import os           # ファイル確認
 #*******************
@@ -26,8 +25,6 @@ from line_notifycate import LineNotifycate
 # Const Define *********************************************************************
 READ_FILE_NAME = "search_list.csv"         # 読込みファイル名
 
-REQUEST_RETRY_NUM = 5   # リクエストリトライ回数
-REQUEST_WAIT_TIME = 10  # リトライ待ち時間(s)
 #***********************************************************************************
 
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -41,54 +38,33 @@ def main():
     
     book_crawling = BookInfoCrawling()
     # 検索データ取得
-    search_infos = book_crawling.create_search_info_list(READ_FILE_NAME)
+    book_crawling.create_search_info_list(READ_FILE_NAME)
     # 著者リスト生成
-    author_list = []
-    for author in search_infos.keys():
-        author_list.append(author)
+    book_crawling.create_author_list()
     # url生成
-    url_list = book_crawling.create_url(search_infos)
-    author_num = len(author_list)
+    url_list = book_crawling.create_url()
     # 検索
-    search_cnt = 0
     all_book_infos = []
     book_scraping = BookInfoScraping()
-    headers = BookInfoCrawling.create_header()
 
     for url in url_list:
         # 検索結果取得
         Debug.tmpprint(url)
-        search_result = requests.get(url, headers=headers)
-        # 失敗時は一定時間待ってから再度取得を試みる
-        if search_result.status_code != requests.codes["ok"]:
-            is_ok = False
-            for retry in range(0,REQUEST_RETRY_NUM,1):
-                time.sleep(REQUEST_WAIT_TIME *( retry+1))
-                search_result = requests.get(url)
-                if search_result.status_code == requests.codes["ok"]:
-                    is_ok = True
-                    break
-                else:
-                    if retry == REQUEST_RETRY_NUM:
-                        print("request err -> " + author_list[search_cnt])
-            if is_ok == False:
-                # 該当データ削除
-                search_infos.pop(author_list[search_cnt])
-                author_list.pop(search_cnt)
-                continue # 最後までだめなら次へ
-        # 解析
-        print("search author(" +  str(search_cnt + 1) + "/" + str(author_num) + ") -> " + author_list[search_cnt])
-        one_author_book_info = book_scraping.analysis_url(search_result)
-        all_book_infos.append(one_author_book_info)
-        # 結果出力
-        #output_result(one_author_book_info, author_list[search_cnt], search_infos[author_list[search_cnt]])
-        search_cnt+=1
+        search_result = book_crawling.exec_search(url)
+        # 正常に結果が取得できた場合
+        if search_result is not None:
+            # 解析実行
+            one_author_book_info = book_scraping.analysis_url(search_result)
+            # 結果をリストに保持
+            all_book_infos.append(one_author_book_info)
+            # 結果出力
+            #output_result(one_author_book_info, author_list[search_cnt], search_infos[author_list[search_cnt]])
         
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
     # ファイルがなければ全て通知
-    write_csv(all_book_infos, author_list, search_infos)
+    output_result_for_csv(all_book_infos, book_crawling.get_author_list(), book_crawling.get_serch_info())
     print("finish!")
 
 #************************************************************************************************
@@ -112,12 +88,12 @@ def check_search_file(filename) -> bool:
         return False
 
 
-def write_csv(all_book_infos:list, author_list:list, output_date:dict):
+def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dict):
     """ CSV書き込み  
     著者名と本リスト，URL，発売日，価格を保存する  
     [I] all_book_infos : 解析後の本情報(全著者分)，author_list : 著者名リスト，output_date : 出力対象の日付
     """
-    Debug.tmpprint("func : write_csv")
+    Debug.tmpprint("func : output_result_for_csv")
     output_filename = "new_book_info_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
     #csvオープン
     with open(output_filename, mode="a", newline="") as csvfile:
@@ -148,6 +124,7 @@ def write_csv(all_book_infos:list, author_list:list, output_date:dict):
                     book_info_cnt -= 1
                     continue
                 book_info_cnt += 1
+
 
 
 def output_result(book_info:BookInfo, search_author:str, output_date:str):

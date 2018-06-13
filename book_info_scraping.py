@@ -51,20 +51,20 @@ class BookInfoScraping:
         book_info = BookInfo()
         # 情報解析/取得
         # タイトル
-        book_info.title = self.get_book_title(root)
+        book_info.title = self.__get_book_title(root)
         # 発売日
-        book_info.date = self.get_book_date(root)
+        book_info.date = self.__get_book_date(root)
         # 著者名
-        book_info.author = self.get_book_author(root)
+        book_info.author = self.__get_book_author(root)
         # 価格
-        #book_info.price = self.get_book_price(root)
+        #book_info.price = self.__get_book_price(root)
         # 商品URL
-        book_info.url = self.get_book_url(root, book_info.title)
+        book_info.url = self.__get_book_url(root, book_info.title)
 
         return book_info
 
 
-    def get_book_title(self, html_item : lxml.html.HtmlElement) -> list:
+    def __get_book_title(self, html_item : lxml.html.HtmlElement) -> list:
         """ 本のタイトル取得  
         [I] html_item : htmlデータ  
         [O] list : 本のタイトルリスト
@@ -83,7 +83,7 @@ class BookInfoScraping:
         return title_list
 
 
-    def get_book_date(self, html_item : lxml.html.HtmlElement) -> list:
+    def __get_book_date(self, html_item : lxml.html.HtmlElement) -> list:
         """ 本の発売日取得  
         [I] html_item : htmlデータ  
         [O] list : 本の発売日リスト
@@ -111,7 +111,7 @@ class BookInfoScraping:
         return date_list
 
 
-    def get_book_author(self, html_item : lxml.html.HtmlElement) -> list:
+    def __get_book_author(self, html_item : lxml.html.HtmlElement) -> list:
         """ 本の著者名取得  
         [I] html_item : htmlデータ  
         [O] list : 本の著者名リスト
@@ -152,7 +152,7 @@ class BookInfoScraping:
         return author_list
 
 
-    def get_book_price(self, html_item : lxml.html.HtmlElement) -> list:
+    def __get_book_price(self, html_item : lxml.html.HtmlElement) -> list:
         """ 本の価格取得  
         [I] html_item : htmlデータ  
         [O] list : 本の価格リスト
@@ -173,7 +173,7 @@ class BookInfoScraping:
 
 
     # 本の商品ページURL取得
-    def get_book_url(self, html_item : lxml.html.HtmlElement, title_info:list) -> list:
+    def __get_book_url(self, html_item : lxml.html.HtmlElement, title_info:list) -> list:
         """ 本の商品ページURL取得  
         [I] html_item : htmlデータ  
         [O] list : 本の商品ページリスト
