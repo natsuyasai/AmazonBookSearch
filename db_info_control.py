@@ -35,7 +35,7 @@ class DBInfoCntrl:
         self.__book_info_tbl_cursor = None  # 検索対象情報テーブルカーソル情報
 
 
-    def create_db(self, user_name:str):
+    def create_db(self, user_name:str) -> bool:
         """ DB生成
         """
         try:
@@ -44,18 +44,22 @@ class DBInfoCntrl:
             # 未生成時のみ生成を行う
             #self.__user_info_tbl_cursor.execute("drop table if exists %s" % USER_INFO)
             # ユーザ情報テーブル
-            self.__user_info_tbl_cursor.execute("create table if not exists %s (id int primary key, user_name text, table_name text)" % USER_INFO)
+            self.__user_info_tbl_cursor.execute("create table if not exists %s (user_name text primary key, table_name text)" % USER_INFO)
             # 
             self.__book_info_tbl_name = user_name+BOOK_INFO
             #self.__book_info_tbl_cursor.execute("drop table if exists %s" % (table_name))
             self.__book_info_tbl_cursor.execute("create table if not exists %s (id int primary key, table_name text)" % (self.__book_info_tbl_name))
 
             #insert
-            query_str = "insert into " + USER_INFO + " values (?, ?, ?)"
-            self.__user_info_tbl_cursor.execute(query_str, (1,user_name, self.__book_info_tbl_name))
+            query_str = "insert into " + USER_INFO + " values (?, ?)"
+            # 現データ数取得
+            #self.__user_info_tbl_cursor.execute("select count(*) from %s " % self.__user_info_tbl_name)
+            #data_max = self.__user_info_tbl_cursor.fetchall()
+            self.__user_info_tbl_cursor.execute(query_str, (user_name, self.__book_info_tbl_name))
             
         except sqlite3.Error as e:
             print(e.args[0])
+            return False
             
         # output
         for row in self.__user_info_tbl_cursor.execute("select * from %s" % USER_INFO):
@@ -65,6 +69,7 @@ class DBInfoCntrl:
                 
         # 接続解除
         self.__disconnect_db()
+        return True
 
 
     def get_db_author_list(self) -> list:
@@ -88,3 +93,7 @@ class DBInfoCntrl:
         # 接続終了
         self.__db_conection.close()
     
+
+if __name__ == "__main__":
+    dbtest = DBInfoCntrl()
+    dbtest.create_db("nyasai")
