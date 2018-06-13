@@ -15,11 +15,11 @@ import datetime     # 日付判定
 import re           # 文字列解析
 import os           # ファイル確認
 #*******************
-from debug_info import Debug
-from book_info_crawling import BookInfoCrawling
-from book_info_scraping import BookInfoScraping
-from book_info_scraping import BookInfo
-from line_notifycate import LineNotifycate
+from debug_info import Debug                    # デバッグ用
+from book_info_crawling import BookInfoCrawling # クローリング関連
+from book_info_scraping import BookInfoScraping # スクレイピング関連
+from book_info_scraping import BookInfo         # 解析情報保持データ型
+from line_notifycate import LineNotifycate      # LINE通知用
 #***********************************************************************************
 
 # Const Define *********************************************************************

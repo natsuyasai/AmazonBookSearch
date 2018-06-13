@@ -37,12 +37,6 @@ class BookInfoCrawling:
         self.__author_list = []  # 著者名リスト
         self.__search_cnt = 0    # 検索カウント
 
-    def __create_header(self) -> dict:
-        """ リクエストヘッダ生成  
-        リクエスト用のヘッダ情報を返す
-        """
-        return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.42'}
-
     
     def create_url(self) -> list:
         """ URL生成  
@@ -68,6 +62,13 @@ class BookInfoCrawling:
         Debug.tmpprint("func : create_search_info_list")
         if filename.find(".csv") > 0:
             self.__create_url_for_csv(filename)
+
+
+    def __create_header(self) -> dict:
+        """ リクエストヘッダ生成  
+        リクエスト用のヘッダ情報を返す
+        """
+        return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.42'}
 
 
     def __create_url_for_csv(self, filename:str):
