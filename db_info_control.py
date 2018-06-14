@@ -39,6 +39,7 @@ class DBInfoCntrl:
         """ DB生成
         """
         try:
+            # 接続
             self.__connect_db()
             # テーブル生成
             # 未生成時のみ生成を行う
@@ -46,9 +47,9 @@ class DBInfoCntrl:
             # ユーザ情報テーブル
             self.__user_info_tbl_cursor.execute("create table if not exists %s (user_name text primary key, table_name text)" % USER_INFO)
             # 
-            self.__book_info_tbl_name = user_name+BOOK_INFO
+            self.__book_info_tbl_name  = user_name+BOOK_INFO
             #self.__book_info_tbl_cursor.execute("drop table if exists %s" % (table_name))
-            self.__book_info_tbl_cursor.execute("create table if not exists %s (id int primary key, table_name text)" % (self.__book_info_tbl_name))
+            self.__book_info_tbl_cursor.execute("create table if not exists %s (author_name text primary key, date text)" % (self.__book_info_tbl_name))
 
             #insert
             query_str = "insert into " + USER_INFO + " values (?, ?)"
@@ -56,15 +57,17 @@ class DBInfoCntrl:
             #self.__user_info_tbl_cursor.execute("select count(*) from %s " % self.__user_info_tbl_name)
             #data_max = self.__user_info_tbl_cursor.fetchall()
             self.__user_info_tbl_cursor.execute(query_str, (user_name, self.__book_info_tbl_name))
-            
+
         except sqlite3.Error as e:
+            # 検索対象情報テーブル名保持
+            self.__book_info_tbl_name = user_name+BOOK_INFO
             print(e.args[0])
             return False
             
         # output
         for row in self.__user_info_tbl_cursor.execute("select * from %s" % USER_INFO):
             print(row)
-            for row_sub in self.__book_info_tbl_cursor.execute("select * from %s" % row[2]):
+            for row_sub in self.__book_info_tbl_cursor.execute("select * from %s" % row[1]):
                 print(row_sub)
                 
         # 接続解除
@@ -73,8 +76,29 @@ class DBInfoCntrl:
 
 
     def get_db_author_list(self) -> list:
+        """ 著者名リスト取得
+        """
         author_list = []
         return author_list
+
+
+    def add_book_info(self, author:str, date:str):
+        """ 検索対象情報追加  
+        [I] author : 著者名 [I] date 出力対象日閾値
+        """
+        # 接続
+        self.__connect_db()
+        # 追加
+        try:
+            query_str = "insert into " + self.__book_info_tbl_name + " values (?, ?)"
+            self.__book_info_tbl_cursor.execute(query_str,(author, date))
+        except sqlite3.Error as e:
+            print(e.args[0])
+        # output
+        for row in self.__book_info_tbl_cursor.execute("select * from %s" % self.__book_info_tbl_name):
+            print(row)
+        # 接続解除
+        self.__disconnect_db()
 
 
     def __connect_db(self):
@@ -97,3 +121,4 @@ class DBInfoCntrl:
 if __name__ == "__main__":
     dbtest = DBInfoCntrl()
     dbtest.create_db("nyasai")
+    dbtest.add_book_info("テスト","2018/06/14")
