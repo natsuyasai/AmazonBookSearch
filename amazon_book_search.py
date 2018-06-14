@@ -23,8 +23,8 @@ from line_notifycate import LineNotifycate      # LINE通知用
 #***********************************************************************************
 
 # Const Define *********************************************************************
-READ_FILE_NAME = "search_list.csv"         # 読込みファイル名
-
+#READ_FILE_NAME = "search_list.csv"         # 読込みファイル名
+READ_FILE_NAME = " "
 #***********************************************************************************
 
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -32,11 +32,16 @@ def main():
     Debug.tmpprint("Start\n")
     # ファイルチェック
     # ファイルが見つからなかった場合は，新規にファイルを作成し，終了する
-    if check_search_file(READ_FILE_NAME) == False:
+    #if check_search_file(READ_FILE_NAME) == False:
+    #    print("finish!")
+    #    return
+    
+    # クローリング用クラス生成
+    book_crawling = BookInfoCrawling()
+    # DB設定
+    if book_crawling.set_table_key("nyasai") is False:
         print("finish!")
         return
-    
-    book_crawling = BookInfoCrawling()
     # 検索データ取得
     book_crawling.create_search_info_list(READ_FILE_NAME)
     # 著者リスト生成
