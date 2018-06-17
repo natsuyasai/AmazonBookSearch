@@ -51,7 +51,7 @@ def main():
     # 検索
     all_book_infos = []
     book_scraping = BookInfoScraping()
-
+    search_cnt = 0
     for url in url_list:
         # 検索結果取得
         Debug.tmpprint(url)
@@ -63,7 +63,8 @@ def main():
             # 結果をリストに保持
             all_book_infos.append(one_author_book_info)
             # 結果出力
-            #output_result(one_author_book_info, author_list[search_cnt], search_infos[author_list[search_cnt]])
+            #output_result(one_author_book_info, book_crawling.get_author_list()[search_cnt], book_crawling.get_serch_info()[book_crawling.get_author_list()[search_cnt]])
+            #search_cnt += 1
         
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
@@ -148,12 +149,12 @@ def output_result(book_info:BookInfo, search_author:str, output_date:str):
                 if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
                     >= datetime.datetime.strptime(output_date, "%Y/%m/%d"):
                     output_str=""
-                    output_str += author + ","                          # 著者名
-                    output_str += book_info.title[book_info_cnt] + ","  # タイトル
-                    output_str += book_info.date[book_info_cnt] + ","   # 発売日
+                    output_str += author + "<br/>"                          # 著者名
+                    output_str += book_info.title[book_info_cnt] + "<br/>"  # タイトル
+                    output_str += book_info.date[book_info_cnt] + "<br/>"   # 発売日
                     #output_str += book_info.price[book_info_cnt] + "," # 価格
-                    output_str += ","
-                    output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
+                    output_str += "<br/>"
+                    output_str += '<a href="' + book_info.url[book_info_cnt] + '">Link</a><br/><br/>'   # 商品URL
                     print(output_str)
         except IndexError:
             print("IndexError!! -> " + author)
