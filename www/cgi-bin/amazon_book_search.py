@@ -28,18 +28,18 @@ READ_FILE_NAME = " "
 #***********************************************************************************
 
 # エントリポイント @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-def main():
+def main(user_name:str):
     Debug.tmpprint("Start\n")
     # ファイルチェック
     # ファイルが見つからなかった場合は，新規にファイルを作成し，終了する
     #if check_search_file(READ_FILE_NAME) == False:
     #    print("finish!")
     #    return
-    
+    print(user_name + "<br/>")
     # クローリング用クラス生成
     book_crawling = BookInfoCrawling()
     # DB設定
-    if book_crawling.set_table_key("nyasai") is False:
+    if book_crawling.set_table_key(user_name) is False:
         print("finish!")
         return
     # 検索データ取得
@@ -63,14 +63,14 @@ def main():
             # 結果をリストに保持
             all_book_infos.append(one_author_book_info)
             # 結果出力
-            #output_result(one_author_book_info, book_crawling.get_author_list()[search_cnt], book_crawling.get_serch_info()[book_crawling.get_author_list()[search_cnt]])
-            #search_cnt += 1
+            output_result(one_author_book_info, book_crawling.get_author_list()[search_cnt], book_crawling.get_serch_info()[book_crawling.get_author_list()[search_cnt]])
+            search_cnt += 1
         
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
     # ファイルがなければ全て通知
-    output_result_for_csv(all_book_infos, book_crawling.get_author_list(), book_crawling.get_serch_info())
+    #output_result_for_csv(all_book_infos, book_crawling.get_author_list(), book_crawling.get_serch_info())
     print("finish!")
 
 #************************************************************************************************
@@ -124,6 +124,7 @@ def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dic
                             #output_str += book_info.price[book_info_cnt] + "," # 価格
                             output_str += ","
                             output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
+                            print(output_str)
                             csvfile.write(output_str)
                 except IndexError:
                     print("IndexError!! -> " + author)
@@ -152,9 +153,9 @@ def output_result(book_info:BookInfo, search_author:str, output_date:str):
                     output_str += author + "<br/>"                          # 著者名
                     output_str += book_info.title[book_info_cnt] + "<br/>"  # タイトル
                     output_str += book_info.date[book_info_cnt] + "<br/>"   # 発売日
-                    #output_str += book_info.price[book_info_cnt] + "," # 価格
-                    output_str += "<br/>"
-                    output_str += '<a href="' + book_info.url[book_info_cnt] + '">Link</a><br/><br/>'   # 商品URL
+                    #output_str += book_info.price[book_info_cnt] + "<br/>" # 価格
+                    #output_str += "<br/>"
+                    output_str += '<a href="' + book_info.url[book_info_cnt] + '">Link</a><br/><br/>'
                     print(output_str)
         except IndexError:
             print("IndexError!! -> " + author)
@@ -165,4 +166,4 @@ def output_result(book_info:BookInfo, search_author:str, output_date:str):
 
 # 実行
 if __name__ == "__main__":
-    main()
+    main("")
