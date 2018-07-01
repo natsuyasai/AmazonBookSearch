@@ -14,6 +14,7 @@ import urllib       # urlエンコード変換
 import datetime     # 日付判定
 import re           # 文字列解析
 import os           # ファイル確認
+import sys          # コマンドライン引数用
 #*******************
 from debug_info import Debug                    # デバッグ用
 from book_info_crawling import BookInfoCrawling # クローリング関連
@@ -155,7 +156,7 @@ def output_result(book_info:BookInfo, search_author:str, output_date:str):
                     output_str += book_info.date[book_info_cnt] + "<br/>"   # 発売日
                     #output_str += book_info.price[book_info_cnt] + "<br/>" # 価格
                     #output_str += "<br/>"
-                    output_str += '<a href="' + book_info.url[book_info_cnt] + '">Link</a><br/><br/>'
+                    output_str += '<a href="' + book_info.url[book_info_cnt] + 'target="_blank"' +'">Link</a><br/><br/>'
                     print(output_str)
         except IndexError:
             print("IndexError!! -> " + author)
@@ -166,4 +167,5 @@ def output_result(book_info:BookInfo, search_author:str, output_date:str):
 
 # 実行
 if __name__ == "__main__":
-    main("")
+    args = sys.argv
+    main(args[1])

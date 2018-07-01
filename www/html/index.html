@@ -5,12 +5,74 @@
     </head>
     <body>
 
-<form method="post" action="/cgi-bin/form.py">
-UserName：<input type="text" value="" name="user_name"/><br/>
-Password：<input type="password" name="password_name"/><br/>
-AuthorInfo：<br/>
-<textarea name="textarea_name" rows="4" cols="40"></textarea><br/><br/>
-<button>Send!!</button>
+<!--フォーム-->
+<form id="search_form" method="post" action="/cgi-bin/form.py">
+    UserName：<input type="text" value="" name="user_name"/><br/>
+    <!--Password：<input type="password" name="password_name"/><br/>-->
+    SearchDay：<input type="text" name="date_info"/><br/>
+    <!--現在年月日設定-->
+    <script type="text/javascript">
+    document.getElementsByName("date_info")[0].value = getNowDate();
+    function getNowDate()
+    {
+        var now = new Date();
+        var year = now.getFullYear();
+        var mon = now.getMonth()+1; //１を足すこと
+        var day = now.getDate();
+        // 文字列生成
+        var dateStr = year + "/" + mon + "/" + day;
+        return dateStr;
+    }
+    </script>
+    AuthorInfo：<br/>
+    <textarea name="textarea_info" rows="4" cols="40"></textarea><br/><br/>
+    <input type="submit" value="Search">
 </form>
+
+<!--結果表示-->
+<hr style="border:0;border-top:1px solid blue;">
+<script type="text/javascript">
+window.addEventListener("load",function()
+{
+    function callCgi()
+    {
+        var req = new XMLHttpRequest();
+        // formオブジェクトにform要素を紐づけ
+        var formData = new FormData(form);
+        
+        // データが正常に送信された場合
+        req.addEventListener("load", function(event) {
+            //alert(event.target.responseText);
+        });
+
+        // エラーが発生した場合
+        req.addEventListener("error", function(event) {
+            alert('Oups! Something goes wrong.');
+        });
+
+        // リクエスト設定
+        req.open("POST","/cgi-bin/form.py",true);
+        req.send(formData);
+        req.onreadystatechange = function()
+        {
+            if(req.readyState != 4 || req.status != 200)
+            {
+                return;
+            }
+            // 表示更新
+            document.body.innerHTML += req.responseText;
+        }
+    }
+    // from要素取得
+    var form = document.getElementById("search_form");
+    // 送信イベント取得
+    form.addEventListener("submit",function(event)
+    {
+        event.preventDefault();
+        callCgi();
+    });
+});
+
+</script>
     </body>
 </html>
