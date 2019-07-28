@@ -20,7 +20,9 @@ from db_info_control import DBInfoCntrl, DBAuthorInfo
 #***********************************************************************************
 
 # Const Define *********************************************************************
-AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s/url=search-alias%3Dstripbooks&field-keywords="   # アマゾン検索用URL
+# AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="   # アマゾン検索用URL
+AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="
+AMAZON_SEARCH_URL2 = "&i=stripbooks&rh=p_n_srvg_2374648051%3A86137051|86139051|86140051%2Cp_n_availability%3A2227306051&s=date-desc-rank&dc&__mk_ja_JP=カタカナ&qid=1564319562&rnid=2227305051&ref=sr_nr_p_n_availability_2"
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=カタカナ&url=search-alias%3Dstripbooks&field-keywords=
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
@@ -50,7 +52,7 @@ class BookInfoCrawling:
         # 全key名でURLを生成し，listに保持
         for search_name in self.__author_list:
             Debug.tmpprint(search_name)
-            url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote(search_name.encode("utf-8"))) # 日本語を16進数に変換
+            url_list.append(AMAZON_SEARCH_URL + urllib.parse.quote(search_name.encode("utf-8")) + AMAZON_SEARCH_URL2) # 日本語を16進数に変換
         return url_list
 
 

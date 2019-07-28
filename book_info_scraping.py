@@ -73,10 +73,11 @@ class BookInfoScraping:
         # 商品タイトル部分抽出
         title_list = []
         titles = html_item.xpath(
-            "//div[contains(@class, 's-item-container')]"\
-            "//div[contains(@class, 'a-row a-spacing-mini')]"\
-            "//div[contains(@class, 'a-row a-spacing-none')]"\
-            "//h2[contains(@class, 's-access-title')]")
+            "//div[contains(@class, 'sg-row')]"\
+            "//div[contains(@class, 'sg-col-inner')]"
+            "//div[contains(@class, 'a-section a-spacing-none')]"\
+            "//h2[contains(@class, 'a-size-mini a-spacing-none a-color-base s-line-clamp-2')]"\
+            "//span[contains(@class, 'a-size-medium a-color-base a-text-normal')]")
         for title in titles:
             title_list.append(title.text_content().encode("utf-8").decode("utf-8"))
             Debug.tmpprint(title.text_content().encode("utf-8").decode("utf-8"))
@@ -92,10 +93,11 @@ class BookInfoScraping:
         date_list = []
         # 発売日部分取得
         dates = html_item.xpath(
-            "//div[contains(@class, 's-item-container')]"\
-            "//div[contains(@class, 'a-row a-spacing-mini')]"\
-            "//div[contains(@class, 'a-row a-spacing-none')]"\
-            "//span[contains(@class, 'a-size-small a-color-secondary')]")
+            "//div[contains(@class, 'sg-row')]"\
+            "//div[contains(@class, 'sg-col-inner')]"\
+            "//div[contains(@class, 'a-section a-spacing-none')]"\
+            "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"\
+            "//span[contains(@class, 'a-size-base a-color-secondary a-text-normal')]")
         for date in dates:
             date_str = ""
             # 発売日以外の部分も引っかかってしまうため，日付情報に変換ができないものは弾く
@@ -122,32 +124,27 @@ class BookInfoScraping:
         #       そのため，3要素目以降を取得するようにする
         author_list = []
         authors = html_item.xpath(
-            "//div[contains(@class, 's-item-container')]"\
-            "//div[contains(@class, 'a-row a-spacing-mini')]"\
-            "//div[contains(@class, 'a-row a-spacing-none')]"\
-            "//span[contains(@class, 'a-size-small a-color-secondary')]")
+            "//div[contains(@class, 'sg-row')]"\
+            "//div[contains(@class, 'sg-col-inner')]"\
+            "//div[contains(@class, 'a-section a-spacing-none')]"\
+            "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"\
+            "//a[contains(@class, 'a-size-base a-link-normal')]")
         data_cnt = 1
         for author in authors:
-            # 日付でなく且つ空白でなければ著者情報
-            try:
-                datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m/%d").strftime("%Y/%m/%d")
-                data_cnt = 1
-            except ValueError:
-                try:
-                    datetime.datetime.strptime(author.text_content().encode("utf-8").decode("utf-8"), "%Y/%m").strftime("%Y/%m/%d")
-                    data_cnt = 1
-                except ValueError:
-                    tmp_str = author.text_content().encode("utf-8").decode("utf-8")
-                    if len(tmp_str) != 0:
-                        # 複数著者名
-                        if data_cnt == 4:
-                            mult_author = author_list[-1]   # 末尾データ取得
-                            author_list.pop()               # 末尾データ削除
-                            author_list.append(mult_author + tmp_str)   # 最終データに現在の著者名をつなげた文字列とする
-                        else:
-                            # 著者名保持
-                            author_list.append(tmp_str)
-                            Debug.tmpprint(tmp_str)
+            tmp_str = author.text_content().encode("utf-8").decode("utf-8")
+            # 改行と空白を削除
+            tmp_str = tmp_str.replace("\n", "")
+            tmp_str = tmp_str.replace(" ", "")
+            if len(tmp_str) != 0:
+                # 複数著者名
+                if data_cnt == 4:
+                    mult_author = author_list[-1]   # 末尾データ取得
+                    author_list.pop()               # 末尾データ削除
+                    author_list.append(mult_author + tmp_str)   # 最終データに現在の著者名をつなげた文字列とする
+                else:
+                    # 著者名保持
+                    author_list.append(tmp_str)
+                    Debug.tmpprint(tmp_str)
             data_cnt+=1
         return author_list
 
@@ -182,20 +179,14 @@ class BookInfoScraping:
         # URL部分抽出
         url_list = []
         urls = html_item.xpath(
-            "//div[contains(@class, 's-item-container')]"\
-            "//div[contains(@class, 'a-row a-spacing-mini')]"\
-            "//div[contains(@class, 'a-row a-spacing-none')]"\
-            "//a[contains(@class, 'a-link-normal s-access-detail-page  s-color-twister-title-link a-text-normal')]")
-        title_cnt = 0
-        is_get_url = False
+            "//div[contains(@class, 'sg-row')]"\
+            "//div[contains(@class, 'sg-col-inner')]"\
+            "//div[contains(@class, 'a-section a-spacing-none')]"\
+            "//h2[contains(@class, 'a-size-mini a-spacing-none a-color-base s-line-clamp-2')]"\
+            "//a[contains(@class, 'a-link-normal a-text-normal')]"\
+            "//@href")
+        LINK_URL = "https://www.amazon.co.jp"
         for url in urls:
-            for item in url.items(): # hrefにURLがあるため，それを探索し，取得する
-                # タイトルと一致するならばその1回だけURLを取得する
-                if item[0] == "title" and item[1] == title_info[title_cnt]:
-                    is_get_url = True
-                    title_cnt += 1
-                if item[0] == "href" and is_get_url == True:
-                    url_list.append(item[1])
-                    Debug.tmpprint(item[1])
-                    is_get_url = False
+            url_list.append(LINK_URL + url)
+            Debug.tmpprint(LINK_URL + url)
         return url_list
