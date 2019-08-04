@@ -120,8 +120,6 @@ class BookInfoScraping:
         """
         Debug.tmpprint("func : get_book_author")
         # 著者名部分抽出
-        # note. アマゾンの下記要素を取得すると，「日付→空白→著者名」の順に取得される．
-        #       そのため，3要素目以降を取得するようにする
         author_list = []
         authors = html_item.xpath(
             "//div[contains(@class, 'sg-row')]"\
