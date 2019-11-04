@@ -22,7 +22,7 @@ from db_info_control import DBInfoCntrl, DBAuthorInfo
 # Const Define *********************************************************************
 # AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="   # アマゾン検索用URL
 AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="
-AMAZON_SEARCH_URL2 = "&i=stripbooks&rh=p_n_srvg_2374648051%3A86137051|86139051|86140051%2Cp_n_availability%3A2227306051&s=date-desc-rank&dc&__mk_ja_JP=カタカナ&qid=1564319562&rnid=2227305051&ref=sr_nr_p_n_availability_2"
+AMAZON_SEARCH_URL2 = "&i=stripbooks&rh=p_n_srvg_2374648051%3A86137051%7C86138051%7C86139051%7C86140051%2Cp_n_availability%3A2227306051&s=date-desc-rank&dc&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&qid=1572747088&qid=1572747088&rnid=2374648051&ref=sr_nr_p_n_srvg_2374648051_7"
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=カタカナ&url=search-alias%3Dstripbooks&field-keywords=
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
