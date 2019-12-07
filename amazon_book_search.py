@@ -105,7 +105,7 @@ def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dic
     Debug.tmpprint("func : output_result_for_csv")
     output_filename = "new_book_info_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
     #csvオープン
-    with open(output_filename, mode="a", newline="") as csvfile:
+    with open(output_filename, mode="a", newline="", encoding='utf-8-sig') as csvfile:
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
         # 検索対象データ分ループ
         for author_cnt in range(0, len(author_list), 1):
@@ -121,7 +121,7 @@ def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dic
                         if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
                             >= datetime.datetime.strptime(output_date[author_list[author_cnt]],"%Y/%m/%d"):
                             output_str=""
-                            output_str += author + ","                          # 著者名
+                            output_str += book_info.author[book_info_cnt] + "," # 著者名
                             output_str += book_info.title[book_info_cnt] + ","  # タイトル
                             output_str += book_info.date[book_info_cnt] + ","   # 発売日
                             #output_str += book_info.price[book_info_cnt] + "," # 価格
