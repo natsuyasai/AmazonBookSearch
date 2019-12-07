@@ -14,12 +14,12 @@ import urllib       # urlエンコード変換
 import datetime     # 日付判定
 import re           # 文字列解析
 import os           # ファイル確認
+from typing import List
 #*******************
 from debug_info import Debug                    # デバッグ用
 from book_info_crawling import BookInfoCrawling # クローリング関連
 from book_info_scraping import BookInfoScraping # スクレイピング関連
 from book_info_scraping import BookInfo         # 解析情報保持データ型
-from line_notifycate import LineNotifycate      # LINE通知用
 #***********************************************************************************
 
 # Const Define *********************************************************************
@@ -46,6 +46,8 @@ def main():
     book_crawling.create_search_info_list(READ_FILE_NAME)
     # 著者リスト生成
     book_crawling.create_author_list()
+    # 著者リスト保持
+    target_author_list = book_crawling.get_author_list()
     # url生成
     url_list = book_crawling.create_url()
     # 検索
@@ -55,17 +57,20 @@ def main():
     for url in url_list:
         # 検索結果取得
         Debug.tmpprint(url)
-        search_result = book_crawling.exec_search(url)
+        search_result_divs = book_crawling.exec_search(url)
         # 正常に結果が取得できた場合
-        if search_result is not None:
+        if len(search_result_divs) != 0:
             # 解析実行
-            one_author_book_info = book_scraping.analysis_url(search_result)
+            one_author_book_info = book_scraping.analysis_url(
+                search_result_divs, target_author_list[search_cnt])
             # 結果をリストに保持
             all_book_infos.append(one_author_book_info)
             # 結果出力
             #output_result(one_author_book_info, book_crawling.get_author_list()[search_cnt], book_crawling.get_serch_info()[book_crawling.get_author_list()[search_cnt]])
-            #search_cnt += 1
-        
+            search_cnt += 1
+            # ドライバクローズ
+            book_crawling.cloase_driver()
+
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
@@ -97,7 +102,7 @@ def check_search_file(filename) -> bool:
         return False
 
 
-def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dict):
+def output_result_for_csv(all_book_infos: List[List[BookInfo]], author_list: List[str], output_date: dict):
     """ CSV書き込み  
     著者名と本リスト，URL，発売日，価格を保存する  
     [I] all_book_infos : 解析後の本情報(全著者分)，author_list : 著者名リスト，output_date : 出力対象の日付
@@ -109,33 +114,35 @@ def output_result_for_csv(all_book_infos:list, author_list:list, output_date:dic
         csvfile.write("著者名,タイトル,発売日,価格,商品URL\n")
         # 検索対象データ分ループ
         for author_cnt in range(0, len(author_list), 1):
-            book_info = all_book_infos[author_cnt]
+            book_infos = all_book_infos[author_cnt]
             # 1検索対象データの結果リストから，著者名が一致するもののみを取得
             book_info_cnt = 0
-            for author in book_info.author:
-                # 著者名から空白文字を削除する
-                author = author.replace(" ","")
+            for book_info in book_infos:
                 try:
-                    if author.find(author_list[author_cnt]) != -1:
+                    if book_info.author.find(author_list[author_cnt]) != -1:
                         # 期間が指定日以降なら保存する
-                        if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
+                        if datetime.datetime.strptime(book_info.date, "%Y/%m/%d") \
                             >= datetime.datetime.strptime(output_date[author_list[author_cnt]],"%Y/%m/%d"):
                             output_str=""
-                            output_str += book_info.author[book_info_cnt] + "," # 著者名
-                            output_str += book_info.title[book_info_cnt] + ","  # タイトル
-                            output_str += book_info.date[book_info_cnt] + ","   # 発売日
-                            #output_str += book_info.price[book_info_cnt] + "," # 価格
-                            output_str += ","
-                            output_str += book_info.url[book_info_cnt] + "\n"   # 商品URL
+                            # 著者名
+                            output_str += book_info.author + ","
+                            # タイトル
+                            output_str += book_info.title + ","
+                            # 発売日
+                            output_str += book_info.date + ","
+                            # 価格
+                            output_str += "\"" + book_info.price + "\","
+                            # 商品URL
+                            output_str += book_info.url + "\n"
                             csvfile.write(output_str)
                 except IndexError:
-                    print("IndexError!! -> " + author)
+                    print("IndexError!! -> " + book_info.author)
                     book_info_cnt -= 1
                     continue
                 book_info_cnt += 1
 
 
-def output_result_for_html(all_book_infos:list, author_list:list, output_date:dict):
+def output_result_for_html(all_book_infos: List[List[BookInfo]], author_list: List[str], output_date: dict):
     """ HTML書き込み  
     著者名と本リスト，URL，発売日，価格を保存する  
     [I] all_book_infos : 解析後の本情報(全著者分)，author_list : 著者名リスト，output_date : 出力対象の日付
@@ -146,27 +153,29 @@ def output_result_for_html(all_book_infos:list, author_list:list, output_date:di
     with open(output_filename, mode="a", newline="") as htmlfile:
         # 検索対象データ分ループ
         for author_cnt in range(0, len(author_list), 1):
-            book_info = all_book_infos[author_cnt]
+            book_infos = all_book_infos[author_cnt]
             # 1検索対象データの結果リストから，著者名が一致するもののみを取得
             book_info_cnt = 0
-            for author in book_info.author:
-                # 著者名から空白文字を削除する
-                author = author.replace(" ","")
+            for book_info in book_infos:
                 try:
-                    if author.find(author_list[author_cnt]) != -1:
+                    if book_info.author.find(author_list[author_cnt]) != -1:
                         # 期間が指定日以降なら保存する
-                        if datetime.datetime.strptime(book_info.date[book_info_cnt],"%Y/%m/%d") \
+                        if datetime.datetime.strptime(book_info.date,"%Y/%m/%d") \
                             >= datetime.datetime.strptime(output_date[author_list[author_cnt]],"%Y/%m/%d"):
                             output_str=""
-                            output_str += author + "<br/>"                          # 著者名
-                            output_str += book_info.title[book_info_cnt] + "<br/>"  # タイトル
-                            output_str += book_info.date[book_info_cnt] + "<br/>"   # 発売日
-                            #output_str += book_info.price[book_info_cnt] + "<br/>" # 価格
-                            #output_str += "<br/>"
-                            output_str += '<a href="' + book_info.url[book_info_cnt] + 'target="_blank"' +'">Link</a><br/><br/>'
+                            # 著者
+                            output_str += book_info.author + "<br/>"
+                            # タイトル
+                            output_str += book_info.title + "<br/>"
+                            # 発売日
+                            output_str += book_info.date + "<br/>"
+                            # 価格
+                            output_str += book_info.price + "<br/>"
+                            # 商品URL
+                            output_str += '<a href="' + book_info.url + 'target="_blank"' +'">Link</a><br/><br/>'
                             htmlfile.write(output_str)
                 except IndexError:
-                    print("IndexError!! -> " + author)
+                    print("IndexError!! -> " + book_info.author)
                     book_info_cnt -= 1
                     continue
                 book_info_cnt += 1
