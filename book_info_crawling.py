@@ -22,7 +22,7 @@ from db_info_control import DBInfoCntrl, DBAuthorInfo
 # Const Define *********************************************************************
 # AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="   # アマゾン検索用URL
 AMAZON_SEARCH_URL = "https://www.amazon.co.jp/s?k="
-AMAZON_SEARCH_URL2 = "&i=stripbooks&rh=p_n_srvg_2374648051%3A86137051|86139051|86140051%2Cp_n_availability%3A2227306051&s=date-desc-rank&dc&__mk_ja_JP=カタカナ&qid=1564319562&rnid=2227305051&ref=sr_nr_p_n_availability_2"
+AMAZON_SEARCH_URL2 = "&i=stripbooks&rh=p_n_srvg_2374648051%3A86137051|86138051|86139051|86140051%2Cp_n_availability%3A2227306051&s=date-desc-rank&dc&__mk_ja_JP=カタカナ&qid=1575193372&rnid=2374648051&ref=sr_nr_p_n_srvg_2374648051_9"
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=カタカナ&url=search-alias%3Dstripbooks&field-keywords=
 # https://www.amazon.co.jp/s/ref=nb_sb_noss?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Dstripbooks&field-keywords=
 
@@ -153,7 +153,7 @@ class BookInfoCrawling:
         """ リクエストヘッダ生成  
         リクエスト用のヘッダ情報を返す
         """
-        return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.42'}
+        return {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.99 Safari/537.36 Vivaldi/2.9.1705.41'}
 
 
     def __create_url_for_csv(self, filename:str):
