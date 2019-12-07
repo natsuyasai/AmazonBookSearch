@@ -11,6 +11,7 @@ import requests     # webページ取得用
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 #*******************
 import csv          # CSV読み書き
 import urllib       # urlエンコード変換
@@ -41,7 +42,10 @@ class BookInfoCrawling:
         self.__author_list = []  # 著者名リスト
         self.__search_cnt = 0    # 検索カウント
         self.__db_ctrl = DBInfoCntrl() # DB制御
-        self.__web_drivers = [] # 生成したドライバ一覧
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        self.__driver = webdriver.Chrome(
+            options=chrome_options, executable_path="chromedriver.exe")
 
     
     def create_url(self) -> List[str]:
@@ -122,18 +126,17 @@ class BookInfoCrawling:
         [O] 検索結果
         """
         Debug.tmpprint("func : exec_search")
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.get(url)
-        divs = driver.find_elements_by_class_name('s-result-item')
+        self.__driver.get(url)
+        body = self.__driver.find_element_by_tag_name("body")
+        body.send_keys(Keys.CONTROL + 't')
+        divs = self.__driver.find_elements_by_class_name('s-result-item')
         # 失敗時は一定時間待ってから再度取得を試みる
         if len(divs) == 0:
             is_ok = False
             for retry in range(0,REQUEST_RETRY_NUM,1):
                 time.sleep(REQUEST_WAIT_TIME *( retry+1))
                 # 再度実行
-                divs = driver.find_elements_by_class_name('s-result-item')
+                divs = self.__driver.find_elements_by_class_name('s-result-item')
                 if len(divs) != 0:
                     is_ok = True
                     break
@@ -151,8 +154,6 @@ class BookInfoCrawling:
         Debug.dprint("search author(" +  str(self.__search_cnt + 1) + "/" + str(self.get_author_list_num()) + ") -> " + self.__author_list[self.__search_cnt])
         # 検索数を進める
         self.__search_cnt += 1
-        # ドライバ保持
-        self.__web_drivers.append(driver)
         # 結果を返す
         return divs
 
@@ -162,9 +163,8 @@ class BookInfoCrawling:
         生成したドライバを閉じる
         """
         # ドライバクローズ
-        for driver in self.__web_drivers:
-            driver.close()
-            driver.quit()
+        self.__driver.close()
+        self.__driver.quit()
 
 
 

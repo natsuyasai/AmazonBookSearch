@@ -122,28 +122,51 @@ class BookInfoScraping:
         Debug.tmpprint("func : get_book_author")
         # 著者名部分抽出
         html_element = lxml.html.fromstring(div.get_attribute('innerHTML'))
-        authors = html_element.xpath(
+        authors_link = html_element.xpath(
                 "//div[contains(@class, 'sg-row')]"\
                 "//div[contains(@class, 'sg-col-inner')]"\
                 "//div[contains(@class, 'a-section a-spacing-none')]"\
                 "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"\
                 "//a[contains(@class, 'a-size-base')]")
-        # 取得できなければリンク無しの著者名のため，aタグではなくspanタグのものを再取得
-        if len(authors) == 0:
-            authors = html_element.xpath(
-                "//div[contains(@class, 'sg-row')]"
-                "//div[contains(@class, 'sg-col-inner')]"
-                "//div[contains(@class, 'a-section a-spacing-none')]"
-                "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"
-                "//span[contains(@class, 'a-size-base')]")
+        authors_nonlink = html_element.xpath(
+            "//div[contains(@class, 'sg-row')]"
+            "//div[contains(@class, 'sg-col-inner')]"
+            "//div[contains(@class, 'a-section a-spacing-none')]"
+            "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"
+            "//span[contains(@class, 'a-size-base')]")
         formatting_author_str: str = ""
-        for author in authors:
-            formatting_author_str = author.text_content().encode("utf-8").decode("utf-8")
+        for author in authors_link:
+            tmp_str = author.text_content().encode("utf-8").decode("utf-8")
+            # 無効，区切りは無視
+            if tmp_str == "" or tmp_str == "、 " or tmp_str == ", ":
+                continue
+            # 日付との区切り部分のため終了
+            if tmp_str == " | ":
+                break
             # 改行と空白を削除
-            formatting_author_str = formatting_author_str.replace("\n", "")
-            formatting_author_str = formatting_author_str.replace(" ", "")
+            tmp_str = tmp_str.replace("\n", "")
+            tmp_str = tmp_str.replace(" ", "")
+            formatting_author_str = tmp_str
             Debug.tmpprint(formatting_author_str)
-            break
+
+        for author in authors_nonlink:
+            tmp_str = author.text_content().encode("utf-8").decode("utf-8")
+            # 無効，区切りは無視
+            if tmp_str == "" or tmp_str == "、 " or tmp_str == ", ":
+                continue
+            # 日付との区切り部分のため終了
+            if tmp_str == " | ":
+                break
+            # 改行と空白を削除
+            tmp_str = tmp_str.replace("\n", "")
+            tmp_str = tmp_str.replace(" ", "")
+            # 現状保持無しなら新規追加
+            if len(formatting_author_str) == 0:
+                formatting_author_str  = tmp_str
+            else:
+                # 保持していれば文字列追加
+                formatting_author_str += ("、" + tmp_str)
+            Debug.tmpprint(formatting_author_str)   
         return formatting_author_str
 
 

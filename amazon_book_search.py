@@ -68,9 +68,9 @@ def main():
             # 結果出力
             #output_result(one_author_book_info, book_crawling.get_author_list()[search_cnt], book_crawling.get_serch_info()[book_crawling.get_author_list()[search_cnt]])
             search_cnt += 1
-            # ドライバクローズ
-            book_crawling.cloase_driver()
-
+            
+    # ドライバクローズ
+    book_crawling.cloase_driver()
     # 結果出力
     # TODO: 既に一度出力していれば無視するか？それとも毎回全上書きを行うか？
     # 既にファイルが有れば，そのファイルとの差分をとって結果を何かしらで通知．
