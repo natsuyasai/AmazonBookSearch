@@ -25,11 +25,11 @@ from debug_info import Debug
 # 検索結果情報データ構造クラス
 class BookInfo:
     def __init__(self):
-        self.author = ''        # 著者名
-        self.title = ''         # 書名
-        self.date = ''          # 発売日
-        self.price = ''         # 価格
-        self.url = ''           # 商品詳細ページへのURL
+        self.author: str = ''        # 著者名
+        self.title: str = ''         # 書名
+        self.date: str = ''          # 発売日
+        self.price: str = ''         # 価格
+        self.url: str = ''           # 商品詳細ページへのURL
 #***********************************************************************************
 
 class BookInfoScraping:
@@ -135,13 +135,15 @@ class BookInfoScraping:
             "//div[contains(@class, 'a-row a-size-base a-color-secondary')]"
             "//span[contains(@class, 'a-size-base')]")
         formatting_author_str: str = ""
+        is_continue = lambda target_str: target_str == "" or target_str == "、 " or target_str == ", "
+        is_break = lambda target_str: target_str == " | "
         for author in authors_link:
             tmp_str = author.text_content().encode("utf-8").decode("utf-8")
             # 無効，区切りは無視
-            if tmp_str == "" or tmp_str == "、 " or tmp_str == ", ":
+            if is_continue(tmp_str):
                 continue
             # 日付との区切り部分のため終了
-            if tmp_str == " | ":
+            if is_break(tmp_str):
                 break
             # 改行と空白を削除
             tmp_str = tmp_str.replace("\n", "")
@@ -152,10 +154,10 @@ class BookInfoScraping:
         for author in authors_nonlink:
             tmp_str = author.text_content().encode("utf-8").decode("utf-8")
             # 無効，区切りは無視
-            if tmp_str == "" or tmp_str == "、 " or tmp_str == ", ":
+            if is_continue(tmp_str):
                 continue
             # 日付との区切り部分のため終了
-            if tmp_str == " | ":
+            if is_break(tmp_str):
                 break
             # 改行と空白を削除
             tmp_str = tmp_str.replace("\n", "")

@@ -51,7 +51,7 @@ def main():
     # url生成
     url_list = book_crawling.create_url()
     # 検索
-    all_book_infos = []
+    all_book_infos: List[BookInfo] = []
     book_scraping = BookInfoScraping()
     search_cnt = 0
     for url in url_list:
@@ -85,7 +85,7 @@ def main():
 # 関数実装部
 #************************************************************************************************
 
-def check_search_file(filename) -> bool:
+def check_search_file(filename: str) -> bool:
     """ 検索リストファイル確認  
     ファイルが存在しなければ，新たに生成する  
     [I] filename : 確認対象ファイル名
@@ -182,7 +182,7 @@ def output_result_for_html(all_book_infos: List[List[BookInfo]], author_list: Li
 
 
 
-def output_result(book_info:BookInfo, search_author:str, output_date:str):
+def output_result(book_info: BookInfo, search_author: str, output_date: str):
     """ 結果出力 
     著者名と本リスト，URL，発売日，価格を出力する  
     [I] book_info : 解析後の本情報(1著者)search_author : 著者名，output_date : 出力対象の日付

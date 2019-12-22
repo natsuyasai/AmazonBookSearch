@@ -175,7 +175,7 @@ class BookInfoCrawling:
         return {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.99 Safari/537.36 Vivaldi/2.9.1705.41'}
 
 
-    def __create_url_for_csv(self, filename:str) -> None:
+    def __create_url_for_csv(self, filename: str) -> None:
         """  検索データ情報リスト生成(csvから生成)  
         著者名リストを生成．別途著者名をキーとしたハッシュマップを生成し，データとして検索開始日を保持する  
         [I] filename : 確認対象ファイル名  

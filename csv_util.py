@@ -23,7 +23,7 @@ class CsvEncodeType(Enum):
 
 class CsvUtil:
     @staticmethod
-    def is_utf8_file_with_bom(filename) -> CsvEncodeType:
+    def is_utf8_file_with_bom(filename: str) -> CsvEncodeType:
         """ BOM確認用関数  
         [I] filename : 確認対象ファイル名  
         [O] SHIFT_JIS : sjis  
